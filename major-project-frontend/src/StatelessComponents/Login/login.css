@@ -2,23 +2,137 @@
   position: relative;
   height: 100vh;
   width: 100vw;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+  background: linear-gradient(120deg, #1a2980 0%, #26d0ce 100%);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Poppins', sans-serif;
-  overflow: hidden;
 }
 
 .login-card {
-  position: relative;
-  z-index: 1; 
-  background-color: white;
+  position: absolute;
+  top: 20%; /* Move the card to 20% from the top */
+  left: 50%;
+  transform: translate(-50%, 0); /* Only center horizontally */
+  z-index: 1;
+  background: rgba(255,255,255,0.05); /* transparent glass effect */
   padding: 40px 30px;
-  border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(26,41,128,0.25);
   width: 100%;
   max-width: 400px;
   text-align: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  margin: 0 auto;
+  left: 0;
+  right: 0;
+}
+
+@media (max-width: 600px) {
+  .login-card {
+    padding: 20px 8px;
+    max-width: 95vw;
+  }
+}
+
+.animated-card {
+  animation: fadeInUp 1s cubic-bezier(.23,1.01,.32,1) both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animated-text {
+  background: linear-gradient(90deg, #ff9800, #ff5e62, #26d0ce, #1a2980);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 25px;
+  animation: textPop 1.2s cubic-bezier(.23,1.01,.32,1) both;
+  /* Add a subtle text shadow for extra highlight */
+  text-shadow: 0 2px 12px rgba(255, 152, 0, 0.25), 0 1px 2px rgba(38, 208, 206, 0.15);
+}
+
+@keyframes textPop {
+  0% { opacity: 0; transform: scale(0.8); }
+  80% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animated-input {
+  animation: inputFade 1.2s cubic-bezier(.23,1.01,.32,1) both;
+  animation-delay: 0.2s;
+  background: rgba(255,255,255,0.25);
+  color: #1a2980;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(26,41,128,0.08);
+  border: 2px solid #26d0ce;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.animated-input:focus {
+  border-color: #1a2980;
+  box-shadow: 0 0 0 3px rgba(38,208,206,0.18);
+  background: rgba(255,255,255,0.35);
+  color: #163d78;
+}
+
+.animated-input::placeholder {
+  color: #1a2980;
+  opacity: 0.7;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(26,41,128,0.08);
+}
+
+@keyframes inputFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animated-btn {
+  animation: btnPop 1.2s cubic-bezier(.23,1.01,.32,1) both;
+  animation-delay: 0.3s;
+  box-shadow: 0 2px 8px rgba(26,41,128,0.10);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.animated-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 18px rgba(26,41,128,0.18);
+}
+
+.login-btn-container {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.role-select {
+  margin-bottom: 0;
+  margin-top: 10px;
+}
+
+.animated-error {
+  color: #ff4444;
+  font-weight: 600;
+  margin-bottom: 18px;
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
 }
 
 .login-card h2 {

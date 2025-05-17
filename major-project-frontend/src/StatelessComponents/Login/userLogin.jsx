@@ -1,7 +1,8 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Aurora from "../../StatefullComponents/Aurora/Aurora.jsx";
+import Ballpit from "../../StatefullComponents/BallPitBg/BallPit.jsx";
+import Button from "../../StatefullComponents/ButtonLogin/LoginButton.jsx";
 import "./login.css";
 
 const UserLogin = () => {
@@ -92,38 +93,17 @@ const UserLogin = () => {
 
   return (
     <div className="login-page">
-      <Aurora />      <div className="login-card">
-        <h2>Login</h2>        {error && (
-          <div className={`error-container ${error.includes('password') ? 'password-error' : ''}`}>
-            <p className="error-message">{error}</p>
-            {/* Only show signup button if user is not registered, not for invalid password */}
-            {error.includes('not registered') && (
-              <button 
-                type="button" 
-                className="signup-redirect-btn"
-                onClick={() => navigate('/signup')}
-              >
-                Sign Up Now
-              </button>
-            )}
-            {/* Show forgot password only for password errors */}
-            {(error.includes('Invalid password') || error === 'Too many failed attempts. Please reset your password.') || error === 'Invalid password - Attempt 1 of 3' || error === 'Invalid password - Attempt 2 of 3' ? (
-              <button 
-                type="button" 
-                className="forgot-password-btn"
-                onClick={() => navigate('/forgot-password')}
-              >
-                Forgot Password?
-              </button>
-            ) : null}
-          </div>
-        )}
+      <Aurora />
+      <div className="login-card">
+        <h2>Login</h2>
+        {error && <p className="error-message">{error}</p>}
         <form onSubmit={handleLogin}>
           <input
             type="email"
             placeholder="Enter Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="animated-input"
           />
           <div className="password-input-container">
             <input
@@ -131,6 +111,7 @@ const UserLogin = () => {
               placeholder="Enter Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="animated-input"
             />
             <button 
               type="button"
@@ -143,20 +124,19 @@ const UserLogin = () => {
           <select 
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="role-select"
+            className="role-select animated-input"
           >
             <option value="patient">Patient</option>
             <option value="doctor">Doctor</option>
             <option value="admin">Admin</option>
           </select>
           <button type="submit">Login</button>
-        </form>
-        <div style={{ marginTop: '12px', textAlign: 'center' }}>
-          <button
-            type="button"
-            className="forgot-password-btn"
-            style={{ background: 'none', border: 'none', color: '#4a00e0', cursor: 'pointer', textDecoration: 'underline', fontSize: '15px' }}
-            onClick={() => navigate('/forgot-password')}
+          
+          {/* Developer bypass button - TO BE REMOVED IN PRODUCTION */}
+          <button 
+            type="button" 
+            onClick={handleDeveloperAccess}
+            className="developer-button"
           >
             Forgot Password?
           </button>

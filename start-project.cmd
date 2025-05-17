@@ -63,14 +63,17 @@ if not exist "node_modules" (
     echo Installing backend dependencies...
     call npm install
     if errorlevel 1 (
-        echo Error installing backend dependencies
+        echo Error installing Python dependencies
+        popd
         cd "%ORIGINAL_DIR%"
         pause
         exit /b 1
     )
+    popd
 )
 start cmd /k "npm run dev"
 
+cd "%ORIGINAL_DIR%"
 echo.
 echo Starting frontend application...
 cd /d "%ORIGINAL_DIR%\major-project-frontend"
@@ -84,8 +87,10 @@ if not exist "node_modules" (
         exit /b 1
     )
 )
+
 start cmd /k "npm run dev"
 
+cd "%ORIGINAL_DIR%"
 echo.
 echo Project is starting up! Please wait...
 echo Backend will be available at: http://localhost:5000 (or next available port)
