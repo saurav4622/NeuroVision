@@ -95,36 +95,6 @@ const UserSignUp = () => {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    const auth2 = await window.gapi.auth2.getAuthInstance();
-    const googleUser = await auth2.signIn();
-    
-    const profile = googleUser.getBasicProfile();
-    const googleData = {
-      name: profile.getName(),
-      email: profile.getEmail(),
-      googleId: profile.getId(),
-      picture: profile.getImageUrl(),
-      role: 'patient'
-    };
-    
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/google-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(googleData)
-      });
-      
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/dashboard');
-      }
-    } catch (error) {
-      alert(error.message);
-    }
-  };
   
   const validateForm = () => {
     const newErrors = {};
@@ -225,15 +195,6 @@ const UserSignUp = () => {
         )}
         {!loading && (
         <form onSubmit={handleSubmit}>
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="role-select"
-          >
-            <option value="patient">Patient</option>
-            <option value="doctor">Doctor</option>
-          </select>
             <div className="form-row">
             <div className="form-col">
               <div className="form-group">
@@ -287,13 +248,13 @@ const UserSignUp = () => {
                     onBlur={handleBlur}
                     className={errors.password && touched.password ? 'input-error' : ''}
                     required
-                  />
-                  <button 
+                  />                  <button 
                     type="button"
                     className="password-toggle-btn"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} opacity={0.8} /> : <Eye size={18} opacity={0.8} />}
                   </button>
                 </div>
                 {errors.password && touched.password && (
@@ -315,13 +276,13 @@ const UserSignUp = () => {
                     onBlur={handleBlur}
                     className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
                     required
-                  />
-                  <button 
+                  />                  <button 
                     type="button"
                     className="password-toggle-btn"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showConfirmPassword ? <EyeOff size={18} opacity={0.8} /> : <Eye size={18} opacity={0.8} />}
                   </button>
                 </div>
                 {errors.confirmPassword && touched.confirmPassword && (
@@ -329,8 +290,9 @@ const UserSignUp = () => {
                 )}
               </div>
             </div>
-          </div>          {form.role === 'patient' && (
-            <div className="patient-fields">
+          </div>          <div className="form-row">
+            <div className="form-col">
+              {form.role === 'patient' && (
               <div className="form-group">
                 <label className="required-field">Date of Birth</label>
                 <input
@@ -346,6 +308,10 @@ const UserSignUp = () => {
                   <div className="field-error">{errors['patientInfo.dateOfBirth']}</div>
                 )}
               </div>
+              )}
+            </div>
+            <div className="form-col">
+              {form.role === 'patient' && (
               <div className="form-group">
                 <label className="required-field">Gender</label>
                 <select
@@ -365,25 +331,27 @@ const UserSignUp = () => {
                   <div className="field-error">{errors['patientInfo.gender']}</div>
                 )}
               </div>
+              )}
             </div>
-          )}          <div className="button-container">
-            <button type="submit" className="signup-button">Sign Up</button>
-            {form.role === 'patient' && (
-              <button 
-                type="button" 
-                onClick={handleGoogleSignup}
-                className="google-signup-button"
-              >
-                Sign up with Google
-              </button>
-            )}
-            <button 
-              type="button" 
-              onClick={() => navigate('/login')}
-              className="back-to-login-btn"
+          </div>
+          <div className="form-group">
+            <label className="required-field">Account Type</label>
+            <select
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className="form-select"
             >
-              Already have an account? Login
-            </button>
+              <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+            </select>
+          </div>          <div className="button-container">
+            <button type="submit" className="signup-button">Sign Up</button>
+            <div className="login-link">
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>
+                Already have an account? Login
+              </a>
+            </div>
           </div>
         </form>
         )}

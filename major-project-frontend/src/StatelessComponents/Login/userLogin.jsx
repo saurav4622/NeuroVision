@@ -57,16 +57,20 @@ const UserLogin = () => {
     if (!password) {
       setError("Please enter your password");
       return;
-    }
-
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+    }    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      console.log('Using API URL:', apiUrl);
+      
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ email, password, role })
-      });          const data = await response.json();      if (!response.ok) {
+      });
+      console.log('Login response status:', response.status);
+      const data = await response.json();
+      console.log('Login response:', data);if (!response.ok) {
         // Handle different error cases
         if (response.status === 401) {          if (data.error === "Invalid password") {
             const attempts = passwordAttempts + 1;
@@ -171,14 +175,14 @@ const UserLogin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="animated-input"
-            />
-            <button 
+            />            <button 
               type="button"
               className="password-toggle-btn"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>          </div>
+              {showPassword ? <EyeOff size={18} opacity={0.8} /> : <Eye size={18} opacity={0.8} />}
+            </button></div>
           
           <select 
             value={role}

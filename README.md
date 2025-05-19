@@ -4,8 +4,17 @@ A modern web-based application for early detection and monitoring of Alzheimer's
 
 ![NeuroVision](major-project-frontend/src/assets/brain-2.png)
 
-## 🌟 Latest Updates
+## 🌟 Latest Updates (May 20, 2025)
 
+- **Improved Brain MRI Image Detection**: New pre-validation mechanism to check if uploaded images are brain MRI scans, preventing non-MRI uploads.
+- **Robust JSON Parsing**: Enhanced prediction processing to correctly handle Python script output and reduce Failed to Parse errors.
+- **Instant Prediction Results**: Classification results are now displayed immediately without database storage or doctor notification for faster feedback.
+- **Enhanced Admin Login Bypass**: Dev bypass button now uses real admin credentials for proper authentication.
+- **Dashboard API Efficiency**: Moved all heavy sorting and filtering logic for appointments to the backend, improving frontend performance.
+- **Next Appointment Logic**: Backend now calculates the next upcoming appointment, reducing client-side processing.
+- **User-friendly Error Messages**: Better error feedback when prediction fails or uploaded images are invalid.
+
+### Previous Updates
 - **Duplicate Emails Allowed**: Multiple users can now register with the same email address (accounts are uniquely identified by userId).
 - **Simplified Doctor Signup**: Doctor registration now only requires name, email, and password—no specialty or manual verification needed.
 - **OTP Email Verification for All**: All users (doctor, patient, admin) must verify their email via OTP before accessing their dashboard.

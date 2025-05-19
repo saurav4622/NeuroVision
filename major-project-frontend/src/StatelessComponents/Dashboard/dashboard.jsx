@@ -1,6 +1,6 @@
 import axios from "axios";
 import { UserCircle2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../StatefullComponents/DashboardButton/Button";
 import DateCalendarValue from "../../StatefullComponents/DateCalender/dateCalender";
@@ -13,7 +13,14 @@ const Dashboard = () => {
   const [messageType, setMessageType] = useState("");
   const [prediction, setPrediction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState(null);  // Function to test connection to backend server
+  const [user, setUser] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
+  const [appointmentsError, setAppointmentsError] = useState("");
+  const reminderTimeout = useRef(null);
+  const [reminder, setReminder] = useState("");
+
+  // Function to test connection to backend server
   const testBackendConnection = async () => {
     try {
       const response = await axios.get('http://localhost:5000/');
@@ -82,7 +89,66 @@ const Dashboard = () => {
     };
 
     fetchUserData();
+
+    // Fetch patient appointments
+    const fetchAppointments = async () => {
+      try {
+        setAppointmentsLoading(true);
+        setAppointmentsError("");
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${apiUrl}/api/doctor/appointments/patient`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setAppointments(response.data || []);
+      } catch (err) {
+        setAppointmentsError("Unable to fetch your appointments.");
+        setAppointments([]);
+      } finally {
+        setAppointmentsLoading(false);
+      }
+    };
+    fetchAppointments();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!appointments || appointments.length === 0) {
+      setReminder("");
+      return;
+    }
+    // Find the next upcoming appointment (approved or scheduled, not completed/denied)
+    const now = new Date();
+    const next = appointments
+      .filter(a => a.status === 'approved' || a.status === 'scheduled')
+      .map(a => ({ ...a, dateObj: new Date(a.date) }))
+      .filter(a => a.dateObj > now)
+      .sort((a, b) => a.dateObj - b.dateObj)[0];
+    if (!next) {
+      setReminder("");
+      return;
+    }
+    const msUntil = next.dateObj - now;
+    if (msUntil < 0) {
+      setReminder("");
+      return;
+    }
+    // Show time remaining
+    const updateReminder = () => {
+      const diff = next.dateObj - new Date();
+      if (diff <= 0) {
+        setReminder("");
+        return;
+      }
+      const hours = Math.floor(diff / 1000 / 60 / 60);
+      const mins = Math.floor((diff / 1000 / 60) % 60);
+      setReminder(`Next appointment: with Dr. ${next.doctorName || ''} in ${hours}h ${mins}m (${next.dateObj.toLocaleString()})`);
+      reminderTimeout.current = setTimeout(updateReminder, 60000);
+    };
+    updateReminder();
+    return () => {
+      if (reminderTimeout.current) clearTimeout(reminderTimeout.current);
+    };
+  }, [appointments]);
 
   const validateFile = (file) => {
     const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
@@ -271,6 +337,36 @@ const Dashboard = () => {
           <div onClick={handleSave}>
             <Button className="upload-section__save">{isLoading ? "Processing..." : "Get Started"}</Button>
           </div>
+        </section>
+        {reminder && <div className="reminder-banner">{reminder}</div>}
+        <section className="patient-appointments-section">
+          <h3>Upcoming Appointments</h3>
+          {appointmentsLoading ? (
+            <p>Loading appointments...</p>
+          ) : appointmentsError ? (
+            <p style={{color: 'red'}}>{appointmentsError}</p>
+          ) : appointments.length === 0 ? (
+            <p>No appointments scheduled.</p>
+          ) : (
+            <table className="appointments-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Doctor</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map(appt => (
+                  <tr key={appt._id}>
+                    <td>{new Date(appt.date).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>{appt.doctorName || 'Unknown'}</td>
+                    <td>{appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </section>
 
         {/* Get Started button removed as requested */}

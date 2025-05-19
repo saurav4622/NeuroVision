@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         dateOfBirth: { type: Date },
         gender: { type: String },
         medicalHistory: [String],
-        serial: { type: String, unique: true, sparse: true }
+        serial: { type: String, unique: true, sparse: true, index: true }
     },
     
     // Doctor assignment for patients
@@ -75,6 +75,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ role: 1, status: 1 });
 userSchema.index({ role: 1, createdAt: -1 });
 userSchema.index({ 'doctorInfo.isVerified': 1, role: 1 });
+userSchema.index({ 'patientInfo.serial': 1 }); // Index for patient serial lookup
 
 // Virtual field to help in MongoDB Compass visualization
 userSchema.virtual('userType').get(function() {

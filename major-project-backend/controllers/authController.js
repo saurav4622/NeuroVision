@@ -60,6 +60,10 @@ exports.signup = async (req, res) => {
 
         // Add role-specific information
         if (role === 'doctor') {
+            // Add Dr. prefix if not already present
+            if (!name.trim().startsWith('Dr.') && !name.trim().startsWith('DR.') && !name.trim().startsWith('dr.')) {
+                userData.name = `Dr. ${name.trim()}`;
+            }
             userData.doctorInfo = {
                 isVerified: true // Doctors are auto-verified now - simplified registration
             };
@@ -201,8 +205,8 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Verify role matches
-        if (role && foundUser.role !== role) {
+        // Verify role matches (case-insensitive)
+        if (role && foundUser.role.toLowerCase() !== role.toLowerCase()) {
             return res.status(403).json({ 
                 error: role === 'admin'
                     ? "Access Denied - Administrative privileges required"

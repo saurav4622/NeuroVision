@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Report = require('../models/Report');
+const Appointment = require('../models/Appointment');
 
 // Get all patients assigned to a specific doctor
 exports.getAssignedPatients = async (req, res) => {
@@ -208,5 +209,124 @@ exports.updatePatientReport = async (req, res) => {
     } catch (error) {
         console.error('Error updating report:', error);
         res.status(500).json({ error: 'Failed to update report' });
+    }
+};
+
+// Get all appointments for the logged-in doctor (optionally filter by date, status, etc.)
+exports.getAppointments = async (req, res) => {
+    try {
+        const doctorId = req.user.userId;
+        const { date, status } = req.query; // Optional: filter by date or status
+        const query = { doctor: doctorId };
+        if (date) {
+            // Get appointments for the specific day
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999);
+            query.date = { $gte: start, $lte: end };
+        }
+        if (status) {
+            // Allow comma-separated status values
+            const statusArr = status.split(',').map(s => s.trim());
+            query.status = { $in: statusArr };
+        }
+        // Only fetch future appointments by default
+        const now = new Date();
+        query.date = query.date || { $gte: now };
+        const appointments = await Appointment.find(query)
+            .populate('patient', 'name email')
+            .sort({ date: 1 });
+        // Find next upcoming appointment (approved or scheduled, not completed/denied)
+        const next = appointments.find(a => ['approved', 'scheduled'].includes(a.status) && a.date > now);
+        res.json({
+            appointments: appointments.map(appt => ({
+                _id: appt._id,
+                patientName: appt.patient?.name || 'Unknown',
+                patientEmail: appt.patient?.email || '',
+                date: appt.date,
+                status: appt.status
+            })),
+            nextAppointment: next ? {
+                _id: next._id,
+                patientName: next.patient?.name || 'Unknown',
+                patientEmail: next.patient?.email || '',
+                date: next.date,
+                status: next.status
+            } : null
+        });
+    } catch (error) {
+        console.error('Error fetching appointments:', error);
+        res.status(500).json({ error: 'Failed to fetch appointments' });
+    }
+};
+
+// Get all appointments for the logged-in patient (optionally filter by date, status, etc.)
+exports.getPatientAppointments = async (req, res) => {
+    try {
+        const patientId = req.user.userId;
+        const { date, status } = req.query; // Optional: filter by date or status
+        const query = { patient: patientId };
+        if (date) {
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999);
+            query.date = { $gte: start, $lte: end };
+        }
+        if (status) {
+            const statusArr = status.split(',').map(s => s.trim());
+            query.status = { $in: statusArr };
+        }
+        // Only fetch future appointments by default
+        const now = new Date();
+        query.date = query.date || { $gte: now };
+        const appointments = await Appointment.find(query)
+            .populate('doctor', 'name email')
+            .sort({ date: 1 });
+        // Find next upcoming appointment (approved or scheduled, not completed/denied)
+        const next = appointments.find(a => ['approved', 'scheduled'].includes(a.status) && a.date > now);
+        res.json({
+            appointments: appointments.map(appt => ({
+                _id: appt._id,
+                doctorName: appt.doctor?.name || 'Unknown',
+                doctorEmail: appt.doctor?.email || '',
+                date: appt.date,
+                status: appt.status
+            })),
+            nextAppointment: next ? {
+                _id: next._id,
+                doctorName: next.doctor?.name || 'Unknown',
+                doctorEmail: next.doctor?.email || '',
+                date: next.date,
+                status: next.status
+            } : null
+        });
+    } catch (error) {
+        console.error('Error fetching patient appointments:', error);
+        res.status(500).json({ error: 'Failed to fetch appointments' });
+    }
+};
+
+// Update appointment status (approve/deny/complete)
+exports.updateAppointmentStatus = async (req, res) => {
+    try {
+        const doctorId = req.user.userId;
+        const { appointmentId } = req.params;
+        const { status } = req.body;
+        if (!['approved', 'denied', 'completed'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+        const appointment = await Appointment.findOne({ _id: appointmentId, doctor: doctorId });
+        if (!appointment) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+        appointment.status = status;
+        appointment.updatedAt = new Date();
+        await appointment.save();
+        res.json({ success: true, appointment });
+    } catch (error) {
+        console.error('Error updating appointment status:', error);
+        res.status(500).json({ error: 'Failed to update appointment status' });
     }
 };

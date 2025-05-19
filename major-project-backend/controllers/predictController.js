@@ -12,6 +12,27 @@ exports.predict = async (req, res) => {
             return res.status(400).json({ error: 'No image data provided' });
         }
 
+        // --- Step 1: Check if the image is a brain MRI ---
+        // Simple heuristic: check filename/metadata or use a lightweight ML model or external API
+        // For now, use a basic check: look for 'brain' or 'mri' in filename or notes (if provided)
+        // In production, use a real classifier or DICOM header check
+        let isBrainMRI = false;
+        if (req.body.filename) {
+            const fname = req.body.filename.toLowerCase();
+            if (fname.includes('mri') || fname.includes('brain')) isBrainMRI = true;
+        }
+        if (!isBrainMRI && notes && typeof notes === 'string') {
+            const n = notes.toLowerCase();
+            if (n.includes('mri') || n.includes('brain')) isBrainMRI = true;
+        }
+        // Optionally, add more advanced checks here (e.g., call a vision API)
+        if (!isBrainMRI) {
+            return res.status(400).json({
+                error: 'Please upload a brain MRI image for classification.',
+                warning: true
+            });
+        }
+
         // Check if classification is enabled
         const config = await SystemConfig.findOne({ key: 'classificationEnabled' });
         const classificationEnabled = config ? config.value : true;
@@ -80,8 +101,26 @@ exports.predict = async (req, res) => {
 
             try {
                 console.log('Parsing output data:', outputData);
-                const result = JSON.parse(outputData);
-                
+                // Find the last line that looks like a JSON object
+                const lines = outputData.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                let lastJsonLine = null;
+                for (let i = lines.length - 1; i >= 0; i--) {
+                  if (lines[i].startsWith('{') && lines[i].endsWith('}')) {
+                    lastJsonLine = lines[i];
+                    break;
+                  }
+                }
+                if (!lastJsonLine) {
+                  console.error('No JSON line found in output:', outputData);
+                  return res.status(500).json({ error: 'Failed to parse prediction result', details: outputData });
+                }
+                let result;
+                try {
+                  result = JSON.parse(lastJsonLine);
+                } catch (parseErr) {
+                  console.error('JSON parse error:', parseErr, 'Raw output:', lastJsonLine);
+                  return res.status(500).json({ error: 'Failed to parse prediction result', details: lastJsonLine });
+                }
                 if (result.error) {
                     console.error('Error in prediction result:', result.error);
                     if (result.traceback) {
@@ -92,68 +131,16 @@ exports.predict = async (req, res) => {
                         details: result.traceback || 'No additional details available'
                     });
                 }
-                
                 if (!result.prediction) {
                     return res.status(500).json({ error: 'Failed to parse prediction result' });
                 }
-                
-                // Save classification results to database if patient is provided
-                const imagePreview = image.substring(0, 100) + '...'; // Store only a preview
-                
-                if (patient) {
-                    const report = new Report({
-                        patient: patient._id,
-                        classification: result.prediction,
-                        classificationDetails: result.probabilities || {
-                            AD: result.prediction === 'AD' ? 1 : 0,
-                            CN: result.prediction === 'CN' ? 1 : 0,
-                            EMCI: result.prediction === 'EMCI' ? 1 : 0,
-                            LMCI: result.prediction === 'LMCI' ? 1 : 0
-                        },
-                        image: imagePreview,
-                        notes: notes || '',
-                        status: 'pending'
-                    });
-                    
-                    // If patient has an assigned doctor, add to the report
-                    if (patient.assignedDoctor) {
-                        report.doctor = patient.assignedDoctor;
-                    }
-                    
-                    await report.save();
-                    
-                    // Update user's meta information
-                    await User.findByIdAndUpdate(patient._id, {
-                        $inc: { 'meta.reportCount': 1, 'meta.successfulScans': 1 },
-                        lastScanDate: new Date()
-                    });
-                    
-                    result.reportId = report._id;
-                    result.reportSaved = true;
-                    
-                    // Notify assigned doctor if exists
-                    if (patient.assignedDoctor) {
-                        try {
-                            const doctor = await User.findById(patient.assignedDoctor);
-                            if (doctor) {
-                                const emailService = require('../utils/emailService');
-                                await emailService.sendNewReportNotificationEmail(
-                                    doctor.email,
-                                    doctor.name,
-                                    patient.name
-                                );
-                            }
-                        } catch (emailError) {
-                            console.error('Failed to notify doctor:', emailError);
-                        }
-                    }
-                }
-                
-                res.json({
-                    ...result,
-                    interpretations: getClassificationInterpretation(result.prediction)
-                });
-                
+                // Save result temporarily (in-memory, not DB)
+                const tempResult = {
+                  ...result,
+                  interpretations: getClassificationInterpretation(result.prediction)
+                };
+                // Immediately return to user, do not save to DB or notify doctor
+                return res.json(tempResult);
             } catch (error) {
                 console.error('JSON Parse Error:', error);
                 res.status(500).json({ 

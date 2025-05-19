@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
+const Appointment = require('../models/Appointment');
 
 // Initialize system configuration once MongoDB is connected
 function initializeSystemConfig() {
@@ -22,10 +23,13 @@ function initializeSystemConfig() {
 }
 initializeSystemConfig();
 
-// Get all doctors
+// Get all doctors (optionally sorted)
 exports.getDoctors = async (req, res) => {
     try {
-        const doctors = await User.find({ role: 'doctor' }).select('-password');
+        const sort = req.query.sort || 'createdAt';
+        const doctors = await User.find({ role: 'doctor' })
+            .select('-password')
+            .sort({ [sort]: 1 });
         res.json(doctors);
     } catch (error) {
         console.error('Error fetching doctors:', error);
@@ -33,10 +37,13 @@ exports.getDoctors = async (req, res) => {
     }
 };
 
-// Get all patients
+// Get all patients (optionally sorted)
 exports.getPatients = async (req, res) => {
     try {
-        const patients = await User.find({ role: 'patient' }).select('-password');
+        const sort = req.query.sort || 'createdAt';
+        const patients = await User.find({ role: 'patient' })
+            .select('-password')
+            .sort({ [sort]: 1 });
         res.json(patients);
     } catch (error) {
         console.error('Error fetching patients:', error);
@@ -90,41 +97,42 @@ exports.toggleClassification = async (req, res) => {
     }
 };
 
-// Assign doctor to patient
+// Assign doctor to patient and create appointment
 exports.assignDoctorToPatient = async (req, res) => {
     try {
-        const { doctorId, patientId } = req.body;
-        
-        if (!doctorId || !patientId) {
-            return res.status(400).json({ error: 'Doctor ID and Patient ID are required' });
+        const { doctorId, patientId, appointmentDate } = req.body;
+        if (!doctorId || !patientId || !appointmentDate) {
+            return res.status(400).json({ error: 'Doctor ID, Patient ID, and appointment date are required' });
         }
-        
         // Verify doctor exists and is a doctor
         const doctor = await User.findOne({ _id: doctorId, role: 'doctor' });
         if (!doctor) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
-        
         // Verify patient exists and is a patient
         const patient = await User.findOne({ _id: patientId, role: 'patient' });
         if (!patient) {
             return res.status(404).json({ error: 'Patient not found' });
         }
-        
         // Update patient with assigned doctor
         patient.assignedDoctor = doctorId;
         await patient.save();
-        
         // Add patient to doctor's assigned patients
         if (!doctor.assignedPatients) {
             doctor.assignedPatients = [];
         }
-        
         if (!doctor.assignedPatients.includes(patientId)) {
             doctor.assignedPatients.push(patientId);
             await doctor.save();
         }
-        
+        // Create appointment
+        const appointment = new Appointment({
+            doctor: doctorId,
+            patient: patientId,
+            date: new Date(appointmentDate),
+            status: 'scheduled'
+        });
+        await appointment.save();
         // Send email notification to patient and doctor
         const emailService = require('../utils/emailService');
         try {
@@ -136,17 +144,15 @@ exports.assignDoctorToPatient = async (req, res) => {
         } catch (emailError) {
             console.error('Failed to send doctor assignment email:', emailError);
         }
-        
         res.json({
             success: true,
-            message: 'Doctor assigned to patient successfully',
-            patient: {
-                id: patient._id,
-                name: patient.name,
-                assignedDoctor: {
-                    id: doctor._id,
-                    name: doctor.name
-                }
+            message: 'Doctor assigned and appointment scheduled successfully',
+            appointment: {
+                id: appointment._id,
+                doctor: doctorId,
+                patient: patientId,
+                date: appointment.date,
+                status: appointment.status
             }
         });
     } catch (error) {
