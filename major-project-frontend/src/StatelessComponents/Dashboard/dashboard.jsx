@@ -1,5 +1,5 @@
 import axios from "axios";
-import { FileUp, UploadCloud, UserCircle2 } from "lucide-react";
+import { UserCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../StatefullComponents/DashboardButton/Button";
@@ -13,7 +13,19 @@ const Dashboard = () => {
   const [messageType, setMessageType] = useState("");
   const [prediction, setPrediction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState(null);  useEffect(() => {
+  const [user, setUser] = useState(null);  // Function to test connection to backend server
+  const testBackendConnection = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/');
+      console.log('Backend server connection test:', response.data);
+      return true;
+    } catch (error) {
+      console.error('Backend connection test failed:', error.message);
+      return false;
+    }
+  };
+  
+  useEffect(() => {
     // Check for authentication
     const token = localStorage.getItem('token');
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -22,6 +34,15 @@ const Dashboard = () => {
       navigate('/login');
       return;
     }
+    
+    // Test backend connection on component mount
+    testBackendConnection()
+      .then(isConnected => {
+        if (!isConnected) {
+          setMessage("Warning: Could not connect to the backend server. Prediction features may not work.");
+          setMessageType("error");
+        }
+      });
 
     // For developer access, allow any role to view the dashboard
     if (token === 'dev-bypass-token') {
@@ -78,7 +99,6 @@ const Dashboard = () => {
     setMessage("");
     setPrediction(null);
   };
-
   const handleSave = async () => {
     if (!selectedFile) {
       setMessage("Please select a file first");
@@ -88,6 +108,14 @@ const Dashboard = () => {
 
     if (!validateFile(selectedFile)) {
       setMessage("Please upload only image files (JPG, JPEG, PNG, GIF, BMP, WEBP)");
+      setMessageType("error");
+      return;
+    }
+
+    // First check if backend is accessible
+    const isConnected = await testBackendConnection();
+    if (!isConnected) {
+      setMessage("Cannot connect to the backend server. Please ensure it's running.");
       setMessageType("error");
       return;
     }
@@ -102,19 +130,55 @@ const Dashboard = () => {
         setMessage("Image saved successfully!");
         setMessageType("success");
 
-        const imageData = reader.result.split(',')[1];
-
-        setIsLoading(true);
+        const imageData = reader.result.split(',')[1];        setIsLoading(true);
+        console.log("Sending prediction request to backend...");
+        
+        // Set a timeout for the request to avoid hanging indefinitely
+        const axiosConfig = {
+          timeout: 30000, // 30 seconds timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };        console.log("Making API request to predict endpoint...");
         const response = await axios.post('http://localhost:5000/api/predict', {
           image: imageData,
-          filename: selectedFile.name
-        });
+          filename: selectedFile.name,
+          patientId: user?._id // Send patient ID if available
+        }, axiosConfig);
 
         setPrediction(response.data.prediction);
-        setMessageType("success");
-      } catch (error) {
-        console.error('Prediction error:', error);
-        setMessage(error.response?.data?.error || "Error processing image");
+        setMessageType("success");      } catch (error) {
+        console.error('Prediction error:', error);        // Enhanced error logging and user feedback
+        console.error('Axios error details:', error);
+        
+        // Check if the server responded with an error message
+        if (error.response) {
+          // The server responded with a status code outside of 2xx range
+          console.error('Error response status:', error.response.status);
+          console.error('Error response data:', error.response.data);          if (error.response.status === 404) {
+            setMessage("API endpoint not found. Please ensure the backend server is running and check the endpoint configuration.");
+          } else if (error.response.status === 500) {
+            // Handle 500 errors with more details
+            const errorMsg = error.response.data?.error || 'Unknown server error';
+            setMessage(`Server error: ${errorMsg}`);
+            
+            // Display more detailed error message for developers in console
+            if (error.response.data?.details) {
+              console.error('Detailed error:', error.response.data.details);
+            }
+          } else {
+            setMessage(`Server error: ${error.response.status} - ${error.response.data?.error || 'Unknown error'}`);
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error('No response received from server');
+          setMessage("No response from server. Please make sure the backend server is running at http://localhost:5000");
+        } else {
+          // Something happened in setting up the request
+          console.error('Error setting up request:', error.message);
+          setMessage(`Error: ${error.message}`);
+        }
+        
         setMessageType("error");
       } finally {
         setIsLoading(false);
@@ -154,10 +218,7 @@ const Dashboard = () => {
         <nav className="sidebar__nav">
           <button className="sidebar__button sidebar__button--active">
             <UserCircle2 size={20} /> Dashboard
-          </button>
-          <button className="sidebar__button">
-            <FileUp size={20} /> Reports
-          </button>
+          </button>          {/* Reports button removed as requested */}
         </nav>
         <button className="sidebar__logout" onClick={handleLogout}>
           <UserCircle2 size={18} /> Log Out
@@ -197,32 +258,24 @@ const Dashboard = () => {
             <p className="upload-message upload-message--success">
               Prediction: {prediction}
             </p>
+          )}          {messageType === "error" && (
+            <div className="error-troubleshooting">
+              <p>If you're seeing prediction errors, try:</p>
+              <ul>
+                <li>Ensuring your MRI image is in a supported format</li>
+                <li>Using a smaller image file (under 5MB)</li>
+                <li>Waiting a moment and trying again</li>
+              </ul>
+            </div>
           )}
           <div onClick={handleSave}>
-            <Button className="upload-section__save">Save</Button>
+            <Button className="upload-section__save">{isLoading ? "Processing..." : "Get Started"}</Button>
           </div>
         </section>
 
-        <div className="get-started">
-          <button 
-            className="get-started__button"
-            onClick={handleGetStarted}
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Get Started"} <UploadCloud size={18} />
-          </button>
-        </div>
+        {/* Get Started button removed as requested */}
 
-        <section className="reports-section">
-          <div className="report-card">
-            <span className="report-card__dot report-card__dot--current"></span>
-            <span>Current Report</span>
-          </div>
-          <div className="report-card">
-            <span className="report-card__dot report-card__dot--previous"></span>
-            <span>Previous Reports</span>
-          </div>
-        </section>
+        {/* Reports section removed as requested */}
       </main>      <aside className="right-panel">
         <div className="profile-card">
           <h3>{user?.name || "Guest User"}</h3>
@@ -230,14 +283,11 @@ const Dashboard = () => {
           {user?.patientInfo?.serial && (
             <p className="patient-serial">ID: {user.patientInfo.serial}</p>
           )}
-        </div>
-        <div className="calendar-container">
+        </div>        <div className="calendar-container">
           <DateCalendarValue />
         </div>
-        <div className="background-image">
-          <img src="https://cdn-icons-png.flaticon.com/512/2920/2920081.png" alt="Mind Graphic" />
-        </div>
-      </aside>
+        {/* Removed background image that was showing an odd symbol */}</aside>
+      {/* Removed the odd symbol/graphic from the bottom right corner */}
     </div>
   );
 };

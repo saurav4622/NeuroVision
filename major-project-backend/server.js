@@ -1,5 +1,3 @@
-const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
 const config = require('./config');
@@ -8,20 +6,10 @@ require('dotenv').config();
 // MongoDB Connection Options
 mongoose.set('strictQuery', false);
 
-const authRoutes = require('./routes/auth');
-const predictRoutes = require('./routes/predict');
+// Import app.js which contains all route configurations
+const app = require('./app');
 
-const app = express();
-
-// CORS Configuration
-app.use(cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json({ limit: '50mb' })); // Increased limit for image uploads
+// No need to configure routes here - they are already configured in app.js
 
 // Connect to MongoDB with proper configurations
 mongoose.connect(config.MONGODB_URI, config.DB_OPTIONS)
@@ -50,15 +38,7 @@ mongoose.connection.on('disconnected', () => {
   console.log('Mongoose disconnected from MongoDB');
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/predict', predictRoutes);
-app.use('/api/admin', require('./routes/admin'));
-
-// Add a test route
-app.get('/', (req, res) => {
-    res.json({ message: 'Backend server is running successfully' });
-});
+// App is already imported at the top of the file
 
 // Add health check route
 app.get('/health', (req, res) => {

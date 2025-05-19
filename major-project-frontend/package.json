@@ -5,11 +5,10 @@
   "description": "Alzheimer's Project Dashboard",
   "type": "module",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "vite",
     "dev": "vite",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "build": "vite build",
+    "test": "echo 'No test specified' && exit 0",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -32,20 +32,44 @@ exports.predict = async (req, res) => {
             }
         }
 
+        // Extract the base64 image data if it contains a header
+        let imageData = image;
+        if (image.includes('base64,')) {
+            imageData = image.split('base64,')[1];
+        }
+
+        console.log('Preparing to run prediction Python script...');
+        
         // Use 'python' on Windows or 'python3' on Unix
         const pythonExecutable = process.platform === 'win32' ? 'python' : 'python3';
+        const pythonScript = path.join(__dirname, '../python/predict.py');
+        
+        console.log(`Using Python executable: ${pythonExecutable}`);
+        console.log(`Python script path: ${pythonScript}`);
+        
         const python = spawn(pythonExecutable, [
-            path.join(__dirname, '../python/predict.py'),
-            JSON.stringify({ image })
+            pythonScript,
+            JSON.stringify({ image: imageData })
         ]);
         
         let outputData = '';
         let errorData = '';
 
-        python.stdout.on('data', (data) => outputData += data.toString());
-        python.stderr.on('data', (data) => errorData += data.toString());
+        python.stdout.on('data', (data) => {
+            const chunk = data.toString();
+            console.log('Python output:', chunk);
+            outputData += chunk;
+        });
+        
+        python.stderr.on('data', (data) => {
+            const chunk = data.toString();
+            console.error('Python error:', chunk);
+            errorData += chunk;
+        });
         
         python.on('close', async (code) => {
+            console.log(`Python process exited with code ${code}`);
+            
             if (code !== 0) {
                 console.error('Python Error:', errorData);
                 return res.status(500).json({ 
@@ -55,9 +79,22 @@ exports.predict = async (req, res) => {
             }
 
             try {
+                console.log('Parsing output data:', outputData);
                 const result = JSON.parse(outputData);
+                
                 if (result.error) {
-                    return res.status(500).json({ error: result.error });
+                    console.error('Error in prediction result:', result.error);
+                    if (result.traceback) {
+                        console.error('Python traceback:', result.traceback);
+                    }
+                    return res.status(500).json({ 
+                        error: result.error,
+                        details: result.traceback || 'No additional details available'
+                    });
+                }
+                
+                if (!result.prediction) {
+                    return res.status(500).json({ error: 'Failed to parse prediction result' });
                 }
                 
                 // Save classification results to database if patient is provided

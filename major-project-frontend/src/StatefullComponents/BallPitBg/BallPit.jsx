@@ -1,25 +1,25 @@
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
-  Clock as e,
-  PerspectiveCamera as t,
-  Scene as i,
-  WebGLRenderer as s,
-  SRGBColorSpace as n,
-  MathUtils as o,
-  Vector2 as r,
   Vector3 as a,
   MeshPhysicalMaterial as c,
+  InstancedMesh as d,
+  Clock as e,
+  AmbientLight as f,
+  SphereGeometry as g,
   ShaderChunk as h,
+  Scene as i,
   Color as l,
   Object3D as m,
-  InstancedMesh as d,
+  SRGBColorSpace as n,
+  MathUtils as o,
   PMREMGenerator as p,
-  SphereGeometry as g,
-  AmbientLight as f,
+  Vector2 as r,
+  WebGLRenderer as s,
+  PerspectiveCamera as t,
   PointLight as u,
   ACESFilmicToneMapping as v,
-  Raycaster as y,
   Plane as w,
+  Raycaster as y,
 } from "three";
 import { RoomEnvironment as z } from "three/examples/jsm/environments/RoomEnvironment.js";
 
@@ -642,7 +642,7 @@ function createBallpit(e, t = {}) {
   };
 }
 
-const Ballpit = ({ className = '', followCursor = true, ...props }) => {
+const Ballpit = ({ className = '', followCursor = true, style = {}, ...props }) => {
   const canvasRef = useRef(null);
   const spheresInstanceRef = useRef(null);
 
@@ -661,11 +661,23 @@ const Ballpit = ({ className = '', followCursor = true, ...props }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Always enforce absolute fill and z-index for background
+  const mergedStyle = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
+    pointerEvents: 'none', // Prevent Ballpit from capturing pointer events
+    ...style,
+  };
+
   return (
     <canvas
       className={className}
       ref={canvasRef}
-      style={{ width: '100%', height: '100%' }}
+      style={mergedStyle}
     />
   );
 };

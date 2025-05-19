@@ -131,13 +131,18 @@ exports.verifyEmail = async (req, res) => {
         // Don't send password in response
         const userResponse = user.toObject();
         delete userResponse.password;
+        delete userResponse.emailVerificationOTP;
+        delete userResponse.otpExpiry;
+        
+        // Update last active time
+        user.lastActive = new Date();
+        await user.save();
         
         res.status(200).json({
             message: "Email verified successfully",
             token,
             user: userResponse,
-            sessionId: session._id,
-            role: user.role // Add role to response for frontend redirect
+            sessionId: session._id
         });
         
     } catch (error) {

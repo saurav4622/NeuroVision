@@ -5,7 +5,7 @@
     justify-content: center;
     align-items: center;
     font-family: 'Poppins', sans-serif;
-    overflow: hidden;    /* Hypnotizing animated background: blue-green swirl */
+    overflow: hidden;    /* No scrolling on main container for desktop */
     background: radial-gradient(circle at 60% 40%, #26d0ce 0%, #1a2980 100%);
     animation: hypnotic-bg 8s linear infinite alternate;
     position: relative;
@@ -21,7 +21,6 @@
       transform: rotate(360deg) scale(1.05);
     }
   }
-  
   .signup-card {
     position: relative;
     z-index: 1;
@@ -30,24 +29,38 @@
     border-radius: 18px;
     box-shadow: 0 8px 32px rgba(26,41,128,0.18);
     width: 100%;
-    max-width: 420px;
+    max-width: 720px; /* Increased width to accommodate horizontal layout */
     text-align: center;
     border: 1.5px solid rgba(255,255,255,0.13);
     margin: 0 auto;
   }
-  
-  @media (max-width: 700px) {
+    @media (max-width: 700px) {
     .signup-card {
       width: 95vw;
       min-width: 0;
-      max-width: 98vw;
-      min-height: 0;
-      max-height: none;
+      max-width: 95vw;
+      padding: 25px 15px;
       background: linear-gradient(135deg, #26d0ce 0%, #1a2980 100%); /* Green-blue gradient for mobile */
     }
+    
+    /* Add mobile-only scroll when needed */
+    .signup-page {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    
+    /* Return to vertical layout on mobile */
+    .patient-fields {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .patient-fields .form-group {
+      width: 100%;
+    }
   }
-  
-  .signup-card h2 {
+    .signup-card h2 {
     margin-bottom: 25px;
     color: #4a00e0;
     animation: pop-up 0.8s cubic-bezier(0.23, 1.25, 0.32, 1) 1;
@@ -61,6 +74,13 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: heading-gradient 3s ease-in-out infinite;
+  }
+  
+  @media (max-width: 480px) {
+    .signup-card h2 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+    }
   }
   
   @keyframes pop-up {
@@ -109,6 +129,18 @@
     text-align: left;
   }
 
+  /* Two column layout for form fields */
+  .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 5px;
+  }
+
+  .form-col {
+    flex: 1;
+    min-width: 0; /* Prevent overflow issues */
+  }
+
   .form-group label {
     display: block;
     margin-bottom: 6px;
@@ -143,23 +175,81 @@
     background-color: #4a00e0;
     color: white;
     margin-bottom: 30px;
+    max-width: 180px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 20px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(74,0,224,0.15);
   }
-
   .doctor-fields,
   .patient-fields {
     background-color: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .patient-fields {
+    width: 100%;
+  }
+  
+  .patient-fields .form-group {
+    flex: 1;
+    min-width: 200px;
   }
 
   .doctor-fields h3 {
     color: #4a00e0;
     margin-bottom: 15px;
   }
+  
+  @media (max-width: 480px) {
+    .doctor-fields,
+    .patient-fields {
+      padding: 15px 10px;
+      margin-bottom: 15px;
+    }
+    
+    .doctor-fields h3 {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 10px;
+    }
+    
+    /* Stack form fields on smaller screens */
+    .form-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
 
+  .button-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  
+  @media (max-width: 700px) {
+    .button-container {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+  
+  .signup-button {
+    flex: 1;
+  }
+  
   .google-signup-button {
-    width: 100%;
+    flex: 1;
     padding: 12px;
     background: linear-gradient(90deg, #8e2de2, #4a00e0, #8e2de2);
     background-size: 200% 200%;
@@ -173,7 +263,6 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-top: 10px;
   }
 
   .google-signup-button:hover {
@@ -203,4 +292,108 @@
   .signup-card button:hover {
     background-color: #3700b3;
   }
+
+  /* Password input container */
+  .password-input-container {
+    position: relative;
+    width: 100%;
+  }
   
+  .password-input-container input {
+    padding-right: 40px; /* Space for the eye icon */
+  }
+  
+  .password-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    padding: 6px;
+  }
+  
+  .password-toggle-btn:hover {
+    color: #4a00e0;
+    background-color: transparent;
+  }
+
+  /* Additional responsive styles for better mobile experience */
+  @keyframes hypnotic-bg {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+  
+  @keyframes gradient-move {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .signup-card {
+      padding: 20px 15px;
+    }
+    
+    .signup-card input,
+    .signup-card select {
+      padding: 10px;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    
+    .signup-card button {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+    
+    .form-group label {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+  }
+  /* Ensure form elements are properly displayed on iOS Safari */
+  @supports (-webkit-touch-callout: none) {
+    .signup-card input,
+    .signup-card select {
+      font-size: 16px; /* Prevents auto-zoom on iOS */
+    }
+    
+    /* Fix for date inputs on iOS */
+    input[type="date"] {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 25px; /* Space for calendar icon */
+    }
+  }
+  
+  /* Responsive adjustments for different screen heights */
+  @media (max-height: 800px) and (min-width: 701px) {
+    .signup-card {
+      transform: scale(0.9);
+      transform-origin: center center;
+    }
+  }
+  
+  /* Even smaller for very short screens */
+  @media (max-height: 700px) and (min-width: 701px) {
+    .signup-card {
+      transform: scale(0.85);
+      transform-origin: center center;
+    }
+  }

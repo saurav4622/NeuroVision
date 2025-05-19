@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import "../Login/login.css";
 
 const VerifyOtp = () => {
   const [otp, setOtp] = useState("");
@@ -21,8 +22,7 @@ const VerifyOtp = () => {
       setError("Please enter the OTP sent to your email.");
       return;
     }
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/verify-email", {
+    try {      const response = await fetch("http://localhost:5000/api/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, otp })
@@ -30,12 +30,17 @@ const VerifyOtp = () => {
       const data = await response.json();
       if (response.ok) {
         setSuccess("Email verified! Redirecting...");
+        
+        // Store authentication data in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
         setTimeout(() => {
-          // Use the role selected during signup if available, else fallback to backend-verified role
-          const roleToRedirect = selectedRole || data.role;
-          if (roleToRedirect === 'doctor') navigate('/doctor');
-          else if (roleToRedirect === 'patient') navigate('/dashboard');
-          else if (roleToRedirect === 'admin') navigate('/admin');
+          // Use the role from the server response as it's more reliable
+          const userRole = data.user?.role || selectedRole;
+          if (userRole === 'doctor') navigate('/doctor');
+          else if (userRole === 'patient') navigate('/dashboard');
+          else if (userRole === 'admin') navigate('/admin');
           else navigate('/');
         }, 1500);
       } else {
@@ -70,11 +75,15 @@ const VerifyOtp = () => {
   if (!userId) {
     return <div>No user found. Please sign up again.</div>;
   }
-
   return (
     <div className="signup-page">
       <div className="signup-card">
         <h2>Verify Your Email</h2>
+        {email && (
+          <div className="info-text" style={{ marginBottom: '20px' }}>
+            We've sent a verification code to <strong>{email}</strong>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -82,10 +91,27 @@ const VerifyOtp = () => {
             value={otp}
             onChange={e => setOtp(e.target.value)}
             required
+            className="animated-input"
           />
-          <button type="submit">Verify</button>
+          <div className="button-container">
+            <button type="submit" className="animated-btn">Verify</button>
+            <button 
+              style={{marginTop: 10}} 
+              onClick={handleResend} 
+              type="button" 
+              className="animated-btn secondary-btn"
+            >
+              Resend OTP
+            </button>
+            <button 
+              type="button"
+              onClick={() => navigate('/login')}
+              className="back-to-login"
+            >
+              Back to Login
+            </button>
+          </div>
         </form>
-        <button style={{marginTop: 10}} onClick={handleResend} type="button">Resend OTP</button>
         {error && <div className="field-error">{error}</div>}
         {success && <div className="success-message">{success}</div>}
         {resendMsg && <div className="success-message">{resendMsg}</div>}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Aurora from "../../StatefullComponents/Aurora/Aurora.jsx";
+import Ballpit from "../../StatefullComponents/BallPitBg/BallPit.jsx";
 import "./login.css";
 
 const ForgotPassword = () => {
@@ -8,10 +8,11 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [step, setStep] = useState("verify"); // "verify", "request", or "reset"
+  const [step, setStep] = useState("request"); // "verify", "request", or "reset"
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [verificationData, setVerificationData] = useState({
     dateOfBirth: "",
     emailConfirm: "",
@@ -21,9 +22,11 @@ const ForgotPassword = () => {
     e.preventDefault();
     setError("");
     setMessage("");
+    setIsLoading(true);
 
     if (!email) {
       setError("Please enter your email address");
+      setIsLoading(false);
       return;
     }
 
@@ -37,6 +40,7 @@ const ForgotPassword = () => {
       });
 
       const data = await response.json();
+      setIsLoading(false);
 
       if (!response.ok) {
         setError(data.error || 'Failed to request password reset');
@@ -44,7 +48,7 @@ const ForgotPassword = () => {
       }
 
       if (data.status === 'success') {
-        setMessage(data.message);
+        setMessage(data.message || "Password reset link has been sent to your email.");
         setStep("reset");
         // In development, we get the token directly
         if (data.resetToken) {
@@ -152,9 +156,17 @@ const ForgotPassword = () => {
 
   return (
     <div className="login-page">
-      <Aurora />
-      <div className="login-card">
-        <h2>
+      <Ballpit
+        count={150}
+        gravity={0.7}
+        friction={0.8}
+        wallBounce={0.95}
+        followCursor={true}
+        colors={[0x1a2980, 0x26d0ce, 0xffffff]}
+        style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0}}
+      />
+      <div className="login-card animated-card">
+        <h2 className="animated-text">
           {step === "verify" 
             ? "Verify Identity" 
             : step === "request" 
@@ -172,6 +184,7 @@ const ForgotPassword = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="animated-input"
             />
             <input
               type="email"
@@ -181,6 +194,7 @@ const ForgotPassword = () => {
                 ...prev,
                 emailConfirm: e.target.value
               }))}
+              className="animated-input"
             />
             <input
               type="date"
@@ -190,15 +204,18 @@ const ForgotPassword = () => {
                 ...prev,
                 dateOfBirth: e.target.value
               }))}
+              className="animated-input"
             />
-            <button type="submit">Verify Identity</button>
-            <button 
-              type="button" 
-              className="back-to-login"
-              onClick={() => navigate('/login')}
-            >
-              Back to Login
-            </button>
+            <div className="button-container">
+              <button type="submit" className="animated-btn">Verify Identity</button>
+              <button 
+                type="button" 
+                className="back-to-login animated-btn"
+                onClick={() => navigate('/login')}
+              >
+                Back to Login
+              </button>
+            </div>
           </form>
         ) : step === "request" ? (
           <form onSubmit={handleRequestReset}>
@@ -207,15 +224,23 @@ const ForgotPassword = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="animated-input"
             />
-            <button type="submit">Send Reset Link</button>
-            <button 
-              type="button" 
-              className="back-to-login"
-              onClick={() => navigate('/login')}
-            >
-              Back to Login
-            </button>
+            <div className="info-text">
+              We'll send a password reset link to this email address.
+            </div>
+            <div className="button-container">
+              <button type="submit" className="animated-btn" disabled={isLoading}>
+                {isLoading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              <button 
+                type="button" 
+                className="back-to-login animated-btn"
+                onClick={() => navigate('/login')}
+              >
+                Back to Login
+              </button>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleResetPassword}>
@@ -224,20 +249,32 @@ const ForgotPassword = () => {
               placeholder="Enter reset token"
               value={resetToken}
               onChange={(e) => setResetToken(e.target.value)}
+              className="animated-input"
             />
             <input
               type="password"
               placeholder="Enter new password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              className="animated-input"
             />
             <input
               type="password"
               placeholder="Confirm new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              className="animated-input"
             />
-            <button type="submit">Reset Password</button>
+            <div className="button-container">
+              <button type="submit" className="animated-btn">Reset Password</button>
+              <button 
+                type="button" 
+                className="back-to-login animated-btn"
+                onClick={() => navigate('/login')}
+              >
+                Back to Login
+              </button>
+            </div>
           </form>
         )}
       </div>

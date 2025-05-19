@@ -8,8 +8,13 @@ const {
 } = require('../controllers/predictController');
 const sessionAuth = require('../middleware/sessionAuth');
 
-// Public routes
-router.post('/predict', predict);
+// Public routes - made these accessible without authentication for testing
+router.post('/', predict);
+
+// Add a test endpoint to verify the predict route is registered
+router.get('/', (req, res) => {
+  res.json({ message: 'Prediction API is working' });
+});
 
 // Define the protected routes with authentication middleware applied individually
 const authenticate = sessionAuth;

@@ -2,6 +2,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SignupLoader from "../../StatefullComponents/SignupLoader/SignupLoader";
+import "./login-button.css";
 import "./userSignUp.css";
 
 const UserSignUp = () => {  
@@ -184,11 +185,18 @@ const UserSignUp = () => {
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);      
-      if (response.ok) {
-        // Show loader for 1s before OTP page
+      if (response.ok) {        // Show loader for 1s before OTP page
         setTimeout(() => {
           setLoading(false);
-          navigate('/verify-otp', { state: { email: form.email, userId: data.userId, role: form.role } });
+          // Pass more complete data to the OTP verification page
+          navigate('/verify-otp', { 
+            state: { 
+              email: form.email, 
+              userId: data.userId, 
+              role: form.role,
+              name: form.name
+            } 
+          });
         }, 1000);
         return;
       } else {
@@ -226,94 +234,102 @@ const UserSignUp = () => {
             <option value="patient">Patient</option>
             <option value="doctor">Doctor</option>
           </select>
-          
-          <div className="form-group">
-            <label className="required-field">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your full name"
-              value={form.name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={errors.name && touched.name ? 'input-error' : ''}
-              required
-            />
-            {errors.name && touched.name && (
-              <div className="field-error">{errors.name}</div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label className="required-field">Email Address</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={form.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={errors.email && touched.email ? 'input-error' : ''}
-              required
-            />
-            {errors.email && touched.email && (
-              <div className="field-error">{errors.email}</div>
-            )}
-          </div>
-          
-          <div className="form-group">
-            <label className="required-field">Password</label>
-            <div className="password-input-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Enter your password"
-                value={form.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={errors.password && touched.password ? 'input-error' : ''}
-                required
-              />
-              <button 
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+            <div className="form-row">
+            <div className="form-col">
+              <div className="form-group">
+                <label className="required-field">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Enter your full name"
+                  value={form.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={errors.name && touched.name ? 'input-error' : ''}
+                  required
+                />
+                {errors.name && touched.name && (
+                  <div className="field-error">{errors.name}</div>
+                )}
+              </div>
             </div>
-            {errors.password && touched.password && (
-              <div className="field-error">{errors.password}</div>
-            )}
-          </div>
 
-          <div className="form-group">
-            <label className="required-field">Confirm Password</label>
-            <div className="password-input-container">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="Confirm your password"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
-                required
-              />
-              <button 
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+            <div className="form-col">
+              <div className="form-group">
+                <label className="required-field">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={errors.email && touched.email ? 'input-error' : ''}
+                  required
+                />
+                {errors.email && touched.email && (
+                  <div className="field-error">{errors.email}</div>
+                )}
+              </div>
             </div>
-            {errors.confirmPassword && touched.confirmPassword && (
-              <div className="field-error">{errors.confirmPassword}</div>
-            )}
           </div>
+            <div className="form-row">
+            <div className="form-col">
+              <div className="form-group">
+                <label className="required-field">Password</label>
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Enter your password"
+                    value={form.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={errors.password && touched.password ? 'input-error' : ''}
+                    required
+                  />
+                  <button 
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {errors.password && touched.password && (
+                  <div className="field-error">{errors.password}</div>
+                )}
+              </div>
+            </div>
 
-          {form.role === 'patient' && (
+            <div className="form-col">
+              <div className="form-group">
+                <label className="required-field">Confirm Password</label>
+                <div className="password-input-container">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder="Confirm your password"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
+                    required
+                  />
+                  <button 
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {errors.confirmPassword && touched.confirmPassword && (
+                  <div className="field-error">{errors.confirmPassword}</div>
+                )}
+              </div>
+            </div>
+          </div>          {form.role === 'patient' && (
             <div className="patient-fields">
               <div className="form-group">
                 <label className="required-field">Date of Birth</label>
@@ -350,18 +366,25 @@ const UserSignUp = () => {
                 )}
               </div>
             </div>
-          )}
-
-          <button type="submit" className="signup-button">Sign Up</button>
-          {form.role === 'patient' && (
+          )}          <div className="button-container">
+            <button type="submit" className="signup-button">Sign Up</button>
+            {form.role === 'patient' && (
+              <button 
+                type="button" 
+                onClick={handleGoogleSignup}
+                className="google-signup-button"
+              >
+                Sign up with Google
+              </button>
+            )}
             <button 
               type="button" 
-              onClick={handleGoogleSignup}
-              className="google-signup-button"
+              onClick={() => navigate('/login')}
+              className="back-to-login-btn"
             >
-              Sign up with Google
+              Already have an account? Login
             </button>
-          )}
+          </div>
         </form>
         )}
       </div>
