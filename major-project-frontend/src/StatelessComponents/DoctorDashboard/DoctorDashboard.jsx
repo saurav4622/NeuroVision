@@ -125,11 +125,13 @@ const DoctorDashboard = () => {
     }
     // Find the next upcoming appointment (approved or scheduled, not completed/denied)
     const now = new Date();
-    const next = appointments
-      .filter(a => a.status === 'approved' || a.status === 'scheduled')
-      .map(a => ({ ...a, dateObj: new Date(a.date) }))
-      .filter(a => a.dateObj > now)
-      .sort((a, b) => a.dateObj - b.dateObj)[0];
+    const next = Array.isArray(appointments)
+      ? appointments
+          .filter(a => a.status === 'approved' || a.status === 'scheduled')
+          .map(a => ({ ...a, dateObj: new Date(a.date) }))
+          .filter(a => a.dateObj > now)
+          .sort((a, b) => a.dateObj - b.dateObj)[0]
+      : undefined;
     if (!next) {
       setReminder("");
       return;

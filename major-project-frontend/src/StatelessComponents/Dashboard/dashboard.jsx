@@ -118,11 +118,13 @@ const Dashboard = () => {
     }
     // Find the next upcoming appointment (approved or scheduled, not completed/denied)
     const now = new Date();
-    const next = appointments
-      .filter(a => a.status === 'approved' || a.status === 'scheduled')
-      .map(a => ({ ...a, dateObj: new Date(a.date) }))
-      .filter(a => a.dateObj > now)
-      .sort((a, b) => a.dateObj - b.dateObj)[0];
+    const next = Array.isArray(appointments)
+      ? appointments
+          .filter(a => a.status === 'approved' || a.status === 'scheduled')
+          .map(a => ({ ...a, dateObj: new Date(a.date) }))
+          .filter(a => a.dateObj > now)
+          .sort((a, b) => a.dateObj - b.dateObj)[0]
+      : undefined;
     if (!next) {
       setReminder("");
       return;
@@ -222,28 +224,33 @@ const Dashboard = () => {
         if (error.response) {
           // The server responded with a status code outside of 2xx range
           console.error('Error response status:', error.response.status);
-          console.error('Error response data:', error.response.data);          if (error.response.status === 404) {
-            setMessage("API endpoint not found. Please ensure the backend server is running and check the endpoint configuration.");
+          console.error('Error response data:', error.response.data);
+          if (error.response.status === 400) {
+            setMessage("Invalid input. Please check your file and try again.");
+          } else if (error.response.status === 401) {
+            setMessage("You are not authorized. Please log in again.");
+            setTimeout(() => navigate('/login'), 2000);
+          } else if (error.response.status === 403) {
+            setMessage("Access denied. You do not have permission to perform this action.");
+          } else if (error.response.status === 404) {
+            setMessage("API endpoint not found. Please contact support or try again later.");
           } else if (error.response.status === 500) {
-            // Handle 500 errors with more details
             const errorMsg = error.response.data?.error || 'Unknown server error';
-            setMessage(`Server error: ${errorMsg}`);
-            
-            // Display more detailed error message for developers in console
+            setMessage(`Server error: ${errorMsg}. Please try again later or contact support if the issue persists.`);
             if (error.response.data?.details) {
               console.error('Detailed error:', error.response.data.details);
             }
           } else {
-            setMessage(`Server error: ${error.response.status} - ${error.response.data?.error || 'Unknown error'}`);
+            setMessage(`Unexpected error (${error.response.status}): ${error.response.data?.error || 'Unknown error'}. Please try again.`);
           }
         } else if (error.request) {
           // The request was made but no response was received
           console.error('No response received from server');
-          setMessage("No response from server. Please make sure the backend server is running at http://localhost:5000");
+          setMessage("No response from server. Please check your internet connection or try again later.");
         } else {
           // Something happened in setting up the request
           console.error('Error setting up request:', error.message);
-          setMessage(`Error: ${error.message}`);
+          setMessage(`Error: ${error.message}. Please try again.`);
         }
         
         setMessageType("error");
