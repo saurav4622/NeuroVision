@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         dateOfBirth: { type: Date },
         gender: { type: String },
         medicalHistory: [String],
-        serial: { type: String, unique: true, sparse: true, index: true }
+        serial: { type: String, unique: true, sparse: true } // removed index: true
     },
     
     // Doctor assignment for patients
