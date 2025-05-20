@@ -6,13 +6,10 @@ const config = {
     PORT: process.env.PORT || 5000,
     JWT_SECRET: process.env.JWT_SECRET || 'alzheimers-detection-system-secret-2025',
     DB_OPTIONS: {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
         serverSelectionTimeoutMS: 5000,
         connectTimeoutMS: 10000,
         socketTimeoutMS: 45000,
-        family: 4, // Use IPv4, skip trying IPv6
-        retryWrites: true
+        family: 4 
     }
 };
 
