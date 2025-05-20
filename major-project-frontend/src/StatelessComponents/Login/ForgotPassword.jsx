@@ -31,7 +31,8 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/password/request-reset', {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/password/request-reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -88,7 +89,8 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/password/reset', {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/password/reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -126,7 +128,8 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/password/verify', {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/password/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -19,11 +19,11 @@ const Dashboard = () => {
   const [appointmentsError, setAppointmentsError] = useState("");
   const reminderTimeout = useRef(null);
   const [reminder, setReminder] = useState("");
-
   // Function to test connection to backend server
   const testBackendConnection = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/');
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await axios.get(`${apiUrl}/`);
       console.log('Backend server connection test:', response.data);
       return true;
     } catch (error) {
@@ -68,8 +68,8 @@ const Dashboard = () => {
 
     // Fetch the complete user data to ensure we have the patient serial
     const fetchUserData = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/auth/validate-session', {
+      try {        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const response = await axios.get(`${apiUrl}/api/auth/validate-session`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -206,7 +206,8 @@ const Dashboard = () => {
             'Content-Type': 'application/json'
           }
         };        console.log("Making API request to predict endpoint...");
-        const response = await axios.post('http://localhost:5000/api/predict', {
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const response = await axios.post(`${apiUrl}/api/predict`, {
           image: imageData,
           filename: selectedFile.name,
           patientId: user?._id // Send patient ID if available

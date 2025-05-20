@@ -15,6 +15,7 @@ app.use(cors({
     'http://localhost:5173',
     'https://alzheimers-detection-app.vercel.app',
     'https://neuro-vision-git-master-parui4622s-projects.vercel.app',
+    'https://neurovision-ait8.onrender.com',
     // Add any other frontend URLs as needed
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

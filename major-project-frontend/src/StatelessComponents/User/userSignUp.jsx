@@ -139,11 +139,10 @@ const UserSignUp = () => {
         } : undefined
       };
 
-      if (!formattedForm.patientInfo) delete formattedForm.patientInfo;
-
-      console.log('Submitting form:', { ...formattedForm, password: '[REDACTED]' });
+      if (!formattedForm.patientInfo) delete formattedForm.patientInfo;      console.log('Submitting form:', { ...formattedForm, password: '[REDACTED]' });
       
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

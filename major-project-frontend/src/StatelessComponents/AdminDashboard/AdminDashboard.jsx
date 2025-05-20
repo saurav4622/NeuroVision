@@ -37,10 +37,10 @@ const AdminDashboard = () => {
         headers: {
           'Authorization': `Bearer ${token}`
         }
-      };
-      // Use new backend endpoints for sorted/processed data
-      const doctorsResponse = await axios.get('http://localhost:5000/api/admin/doctors?sort=createdAt', config);
-      const patientsResponse = await axios.get('http://localhost:5000/api/admin/patients?sort=createdAt', config);
+      };      // Use new backend endpoints for sorted/processed data
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const doctorsResponse = await axios.get(`${apiUrl}/api/admin/doctors?sort=createdAt`, config);
+      const patientsResponse = await axios.get(`${apiUrl}/api/admin/patients?sort=createdAt`, config);
       setDoctors(doctorsResponse.data);
       setPatients(patientsResponse.data);
       // Optionally, fetch next appointment for admin summary
@@ -60,10 +60,10 @@ const AdminDashboard = () => {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
   });
-
   const handleClassificationToggle = async () => {
     try {
-      await axios.post('http://localhost:5000/api/admin/toggle-classification', 
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/admin/toggle-classification`, 
         { enabled: !classificationEnabled },
         getAuthConfig()
       );
@@ -76,12 +76,12 @@ const AdminDashboard = () => {
       }
     }
   };
-
   const handleDeleteUser = async (userId, userType) => {
     if (window.confirm(`Are you sure you want to delete this ${userType}?`)) {
       try {
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         await axios.delete(
-          `http://localhost:5000/api/admin/${userType}/${userId}`,
+          `${apiUrl}/api/admin/${userType}/${userId}`,
           getAuthConfig()
         );
         fetchUsers(); // Refresh the lists
