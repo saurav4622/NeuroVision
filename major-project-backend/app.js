@@ -14,8 +14,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:5173',
     'https://alzheimers-detection-app.vercel.app',
-    'https://neuro-vision-git-master-parui4622s-projects.vercel.app',
-    'https://neuro-vision-l2om4gf6u-parui4622s-projects.vercel.app' // new Vercel deployment
+    'https://neuro-vision.vercel.app', // production frontend
+    /^https:\/\/neuro-vision-.*\.vercel\.app$/ // all Vercel preview deployments
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
