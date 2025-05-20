@@ -205,7 +205,7 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {doctors.map(doctor => (
+                      {Array.isArray(doctors) && doctors.map(doctor => (
                         <tr key={doctor._id}>
                           <td>{doctor.name}</td>
                           <td>{doctor.email}</td>
@@ -239,7 +239,7 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {patients.map(patient => (
+                      {Array.isArray(patients) && patients.map(patient => (
                         <tr key={patient._id}>
                           <td>{patient.name}</td>
                           <td>{patient.email}</td>
@@ -268,13 +268,13 @@ const AdminDashboard = () => {
           <div className="assignment-form">
             <select value={selectedDoctor} onChange={e => setSelectedDoctor(e.target.value)}>
               <option value="">Select Doctor</option>
-              {doctors.map(doc => (
+              {Array.isArray(doctors) && doctors.map(doc => (
                 <option key={doc._id} value={doc._id}>{doc.name}</option>
               ))}
             </select>
             <select value={selectedPatient} onChange={e => setSelectedPatient(e.target.value)}>
               <option value="">Select Patient</option>
-              {patients.map(pat => (
+              {Array.isArray(patients) && patients.map(pat => (
                 <option key={pat._id} value={pat._id}>{pat.name}</option>
               ))}
             </select>

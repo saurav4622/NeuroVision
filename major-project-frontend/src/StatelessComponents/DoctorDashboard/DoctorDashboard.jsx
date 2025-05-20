@@ -254,7 +254,7 @@ const DoctorDashboard = () => {
             <p>Loading appointments...</p>
           ) : appointmentsError ? (
             <p style={{color: 'red'}}>{appointmentsError}</p>
-          ) : appointments.length === 0 ? (
+          ) : !Array.isArray(appointments) || appointments.length === 0 ? (
             <p>No appointments scheduled.</p>
           ) : (
             <table className="appointments-table">
@@ -267,11 +267,11 @@ const DoctorDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {appointments.map(appt => (
+                {Array.isArray(appointments) && appointments.map(appt => (
                   <tr key={appt._id}>
                     <td>{new Date(appt.date).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td>{appt.patientName || 'Unknown'}</td>
-                    <td>{appt.status === 'completed' ? <span style={{color: 'green'}}>Completed</span> : appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}</td>
+                    <td>{appt.status === 'completed' ? <span style={{color: 'green'}}>Completed</span> : appt.status && appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}</td>
                     <td>
                       {appt.status === 'scheduled' && (
                         <>
