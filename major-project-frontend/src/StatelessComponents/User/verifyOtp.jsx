@@ -22,7 +22,9 @@ const VerifyOtp = () => {
       setError("Please enter the OTP sent to your email.");
       return;
     }
-    try {      const response = await fetch("http://localhost:5000/api/auth/verify-email", {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, otp })
@@ -56,7 +58,8 @@ const VerifyOtp = () => {
     setSuccess("");
     setResendMsg("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId })

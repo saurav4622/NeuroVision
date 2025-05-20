@@ -102,12 +102,10 @@ const AdminDashboard = () => {
     }
     try {
       setAssignStatus("Assigning...");
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${apiUrl}/api/admin/assign-doctor`,
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/admin/assign-doctor`,
         { doctorId: selectedDoctor, patientId: selectedPatient, appointmentDate },
-        { headers: { Authorization: `Bearer ${token}` } }
+        getAuthConfig()
       );
       setAssignStatus("Doctor assigned successfully!");
       fetchUsers();

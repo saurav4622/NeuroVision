@@ -95,7 +95,7 @@ const Dashboard = () => {
       try {
         setAppointmentsLoading(true);
         setAppointmentsError("");
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         const token = localStorage.getItem('token');
         const response = await axios.get(`${apiUrl}/api/doctor/appointments/patient`, {
           headers: { 'Authorization': `Bearer ${token}` }
