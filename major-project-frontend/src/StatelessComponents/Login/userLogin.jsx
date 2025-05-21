@@ -88,6 +88,11 @@ const UserLogin = () => {
           setError(`Invalid credentials for ${role} access. Please check your role selection.`);
           return;
         }
+        // Handle Mongo duplicate key error
+        if (data.error && data.error.includes('E11000 duplicate key error')) {
+          setError('An account with this email already exists. Please log in or use a different email.');
+          return;
+        }
         setError(data.error || 'Login failed. Please check your credentials.');
         return;
       }      // Verify role matches
