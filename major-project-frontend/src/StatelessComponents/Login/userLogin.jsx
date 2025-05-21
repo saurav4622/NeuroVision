@@ -33,16 +33,12 @@ const UserLogin = () => {
       setRole(rememberedRole);
     }
     
-    // Check if user is already logged in
-    const { token, user } = auth.getAuthData();
-    
-    if (token && user && user.role) {
-      console.log('User already logged in. Redirecting to appropriate dashboard...');
-      // Redirect to appropriate dashboard based on user role
-      auth.redirectBasedOnRole(user.role);
-    }
+    // Only redirect if user is already logged in and is not on login page intentionally
+    // (e.g., if they try to access /login while logged in, show a message instead)
+    // Remove the auto-redirect here to allow switching accounts
   }, [navigate, auth]);
-    const handleLogin = async (e) => {
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true); // Show loading state
