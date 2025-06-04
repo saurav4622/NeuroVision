@@ -1,11 +1,10 @@
-import React from 'react';
 import styled from 'styled-components';
 
 const Button = () => {
   return (
     <StyledWrapper>
       <div>
-        <button className="btn"><i className="animation" />SAVE<i className="animation" />
+        <button className="btn"><i className="animation" />Get Started<i className="animation" />
         </button>
       </div>
     </StyledWrapper>

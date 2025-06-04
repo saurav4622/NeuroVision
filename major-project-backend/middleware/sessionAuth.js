@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Session = require('../models/Session');
-const config = require('../config');
+const { config } = require('../config');
 
 const sessionAuth = async (req, res, next) => {
     try {

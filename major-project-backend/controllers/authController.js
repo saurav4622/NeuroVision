@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Session = require('../models/Session');
-const config = require('../config');
+const { config } = require('../config');
 
 function generatePatientSerial() {
     // Example: PAT-YYYYMMDD-<random4>

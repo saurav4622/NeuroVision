@@ -1,0 +1,17 @@
+# Backend specific ignores
+.env
+.env.local
+.env.production
+node_modules/
+logs/
+*.log
+coverage/
+.nyc_output
+temp/
+uploads/
+*.pth
+*.h5
+*.pkl
+.pytest_cache/
+__pycache__/
+*.pyc

@@ -76,3 +76,40 @@ exports.sendReportStatusUpdateEmail = async (patientEmail, patientName, status) 
     };
     await transporter.sendMail(mailOptions);
 };
+
+// Send admin credentials email after email verification
+exports.sendAdminCredentialsEmail = async (adminEmail, adminName, tempPassword) => {
+    const transporter = getTransporter();
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: adminEmail,
+        subject: 'Admin Account Created - Alzheimer Detection System',
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+               <h2 style="color: #2c3e50;">Welcome to Alzheimer Detection System</h2>
+               <p>Hi ${adminName},</p>
+               <p>Your admin account has been successfully created and verified. Here are your login credentials:</p>
+               
+               <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                   <h3 style="margin-top: 0; color: #2c3e50;">Login Credentials</h3>
+                   <p><strong>Email:</strong> ${adminEmail}</p>
+                   <p><strong>Temporary Password:</strong> <code style="background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">${tempPassword}</code></p>
+               </div>
+               
+               <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                   <strong>⚠️ Important Security Instructions:</strong>
+                   <ul style="margin: 10px 0;">
+                       <li>Please change your password immediately after your first login</li>
+                       <li>Do not share these credentials with anyone</li>
+                       <li>This is a temporary password and should be changed for security</li>
+                   </ul>
+               </div>
+               
+               <p>You can now log in to the admin dashboard using these credentials.</p>
+               <p>If you have any questions or need assistance, please contact the system administrator.</p>
+               
+               <p style="margin-top: 30px;">Best regards,<br>
+               Alzheimer Detection System Team</p>
+               </div>`
+    };
+    await transporter.sendMail(mailOptions);
+};

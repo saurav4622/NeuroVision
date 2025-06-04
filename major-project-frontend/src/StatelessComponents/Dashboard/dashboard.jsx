@@ -22,7 +22,7 @@ const Dashboard = () => {
   // Function to test connection to backend server
   const testBackendConnection = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:5000';
       const response = await axios.get(`${apiUrl}/`);
       console.log('Backend server connection test:', response.data);
       return true;
@@ -68,7 +68,7 @@ const Dashboard = () => {
 
     // Fetch the complete user data to ensure we have the patient serial
     const fetchUserData = async () => {
-      try {        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      try {        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:5000';
         const response = await axios.get(`${apiUrl}/api/auth/validate-session`, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -95,7 +95,7 @@ const Dashboard = () => {
       try {
         setAppointmentsLoading(true);
         setAppointmentsError("");
-        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:5000';
         const token = localStorage.getItem('token');
         const response = await axios.get(`${apiUrl}/api/doctor/appointments/patient`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -161,12 +161,54 @@ const Dashboard = () => {
     return validExtensions.includes(fileExtension);
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+        setMessage("No file selected.");
+        setMessageType("error");
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        setMessage("Please upload a valid image file.");
+        setMessageType("error");
+        return;
+    }
+
     setSelectedFile(file);
-    setMessage("");
-    setPrediction(null);
-  };
+    setMessage("File selected successfully. Click 'Get Started' to proceed.");
+    setMessageType("info");
+};
+
+  const handlePrediction = async () => {
+    if (!selectedFile) {
+        setMessage('Please select a file to upload.');
+        setMessageType('error');
+        return;
+    }
+
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+        const predictionResponse = await axios.post(`${apiUrl}/api/predict`, formData);
+        if (predictionResponse.data && predictionResponse.data.prediction) {
+            setPrediction(predictionResponse.data.prediction);
+            setMessage('Prediction successful!');
+            setMessageType('success');
+        } else {
+            throw new Error('Invalid response format');
+        }
+    } catch (error) {
+        console.error('Error during prediction:', error);
+        setMessage('Prediction failed. Please try again.');
+        setMessageType('error');
+    } finally {
+        setIsLoading(false);
+    }
+};
+
   const handleSave = async () => {
     if (!selectedFile) {
       setMessage("Please select a file first");
@@ -208,7 +250,7 @@ const Dashboard = () => {
             'Content-Type': 'application/json'
           }
         };        console.log("Making API request to predict endpoint...");
-        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:5000';
         const response = await axios.post(`${apiUrl}/api/predict`, {
           image: imageData,
           filename: selectedFile.name,
@@ -328,25 +370,43 @@ const Dashboard = () => {
               Processing your image...
             </p>
           )}
-          {prediction && (
-            <p className="upload-message upload-message--success">
-              Prediction: {prediction}
-            </p>
-          )}          {messageType === "error" && (
-            <div className="error-troubleshooting">
-              <p>If you're seeing prediction errors, try:</p>
-              <ul>
-                <li>Ensuring your MRI image is in a supported format</li>
-                <li>Using a smaller image file (under 5MB)</li>
-                <li>Waiting a moment and trying again</li>
-              </ul>
-            </div>
-          )}
-          <div onClick={handleSave}>
+          <div onClick={handleGetStarted}>
             <Button className="upload-section__save">{isLoading ? "Processing..." : "Get Started"}</Button>
           </div>
         </section>
         {reminder && <div className="reminder-banner">{reminder}</div>}
+        <section className="prediction-section distinct" style={{ 
+          border: '2px solid #4CAF50', 
+          padding: '20px', 
+          background: 'linear-gradient(135deg, #e0f7fa, #4CAF50)', 
+          borderRadius: '10px', 
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)', 
+          marginTop: '20px' 
+        }}>
+          <h2 style={{ 
+            color: '#4CAF50', 
+            fontSize: '1.8rem', 
+            fontWeight: 'bold', 
+            textAlign: 'center', 
+            marginBottom: '15px' 
+          }}>Prediction Results</h2>
+          {prediction ? (
+            <div className="prediction-result" style={{ 
+              textAlign: 'center', 
+              fontSize: '1.5rem', 
+              color: '#333', 
+              fontWeight: '600' 
+            }}>
+              <h3 style={{ fontWeight: 'bold' }}>Prediction: {prediction} ({prediction === 'AD' ? 'Alzheimer\'s Disease' : prediction === 'MCI' ? 'Mild Cognitive Impairment' : 'Normal Cognitive Function'})</h3>
+            </div>
+          ) : (
+            <p style={{ 
+              textAlign: 'center', 
+              fontSize: '1.2rem', 
+              color: '#666' 
+            }}>No prediction available yet. Please upload an image and click 'Get Started' to begin.</p>
+          )}
+        </section>
         <section className="patient-appointments-section">
           <h3>Upcoming Appointments</h3>
           {appointmentsLoading ? (
@@ -377,9 +437,7 @@ const Dashboard = () => {
           )}
         </section>
 
-        {/* Get Started button removed as requested */}
 
-        {/* Reports section removed as requested */}
       </main>      <aside className="right-panel">
         <div className="profile-card">
           <h3>{user?.name || "Guest User"}</h3>
@@ -390,8 +448,7 @@ const Dashboard = () => {
         </div>        <div className="calendar-container">
           <DateCalendarValue />
         </div>
-        {/* Removed background image that was showing an odd symbol */}</aside>
-      {/* Removed the odd symbol/graphic from the bottom right corner */}
+        </aside>
     </div>
   );
 };

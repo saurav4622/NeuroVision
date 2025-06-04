@@ -12,24 +12,37 @@ const VerifyOtp = () => {
   const userId = location.state?.userId;
   const email = location.state?.email;
   const selectedRole = location.state?.role; // role selected during signup
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     setResendMsg("");
+    
+    // Validate inputs before sending
     if (!otp) {
       setError("Please enter the OTP sent to your email.");
       return;
     }
+    
+    if (!userId) {
+      setError("User ID is missing. Please try signing up again.");
+      return;
+    }
+    
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+      
+      console.log("Sending OTP verification request:", { userId, otp: otp.substring(0, 2) + "***" });
+      
       const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, otp })
       });
+      
       const data = await response.json();
+      console.log("OTP verification response:", { status: response.status, success: response.ok });
+      
       if (response.ok) {
         setSuccess("Email verified! Redirecting...");
         
@@ -46,7 +59,10 @@ const VerifyOtp = () => {
           else navigate('/');
         }, 1500);
       } else {
-        setError(data.error || "Invalid OTP");
+        // Handle specific error messages
+        const errorMessage = data.error || data.message || data.detail || "Invalid OTP";
+        console.error("OTP verification failed:", errorMessage);
+        setError(errorMessage);
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -58,7 +74,7 @@ const VerifyOtp = () => {
     setSuccess("");
     setResendMsg("");
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/auth/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

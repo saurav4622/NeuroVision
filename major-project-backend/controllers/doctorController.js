@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Report = require('../models/Report');
 const Appointment = require('../models/Appointment');
+const emailService = require('../utils/emailService');
 
 // Get all patients assigned to a specific doctor
 exports.getAssignedPatients = async (req, res) => {
@@ -317,13 +318,28 @@ exports.updateAppointmentStatus = async (req, res) => {
         if (!['approved', 'denied', 'completed'].includes(status)) {
             return res.status(400).json({ error: 'Invalid status' });
         }
-        const appointment = await Appointment.findOne({ _id: appointmentId, doctor: doctorId });
+        const appointment = await Appointment.findOne({ _id: appointmentId, doctor: doctorId }).populate('patient', 'name email');
         if (!appointment) {
             return res.status(404).json({ error: 'Appointment not found' });
         }
         appointment.status = status;
         appointment.updatedAt = new Date();
         await appointment.save();
+
+        // Send email notification to the patient
+        if (status === 'approved' || status === 'denied') {
+            const doctor = await User.findById(doctorId, 'name');
+            const salutation = doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+            const emailSubject = `Your appointment has been ${status}`;
+            const emailBody = `Dear ${appointment.patient.name},\n\nYour appointment with ${salutation} has been ${status}.\n\nThank you.`;
+
+            try {
+                await emailService.sendEmail(appointment.patient.email, emailSubject, emailBody);
+            } catch (emailError) {
+                console.error('Failed to send appointment status email:', emailError);
+            }
+        }
+
         res.json({ success: true, appointment });
     } catch (error) {
         console.error('Error updating appointment status:', error);

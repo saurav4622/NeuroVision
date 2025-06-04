@@ -31,7 +31,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/password/request-reset`, {
         method: 'POST',
         headers: {
@@ -89,7 +89,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/password/reset`, {
         method: 'POST',
         headers: {
@@ -128,7 +128,7 @@ const ForgotPassword = () => {
     }
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const response = await fetch(`${apiUrl}/api/password/verify`, {
         method: 'POST',
         headers: {

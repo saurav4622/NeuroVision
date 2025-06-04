@@ -1,0 +1,36 @@
+/* Styles for the Patient Details page */
+.patient-details {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.patient-details h2 {
+  margin-bottom: 20px;
+}
+
+.patient-details p {
+  margin: 10px 0;
+}
+
+.patient-details textarea {
+  width: 100%;
+  height: 100px;
+  margin: 10px 0;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.patient-details button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.patient-details button:hover {
+  background-color: #0056b3;
+}

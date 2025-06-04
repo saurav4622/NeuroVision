@@ -7,6 +7,14 @@ import torchvision.models as models
 from PIL import Image
 import base64
 import io
+import logging
+import warnings
+
+# Configure logging to stderr
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+
+# Suppress specific warnings from torchvision
+warnings.filterwarnings("ignore", category=UserWarning, module="torchvision.models._utils")
 
 # Use ResNet50 architecture as shown in the screenshot
 def create_model(num_classes):
@@ -86,42 +94,34 @@ def predict(image_tensor):
         'probabilities': class_probabilities
     }
 
-if __name__ == "__main__":
+def main():
     try:
-        # Read input data from command line argument
-        data = json.loads(sys.argv[1])
-        image_data = data.get('image', '')
-        
-        if not image_data:
-            print(json.dumps({'error': 'No image data provided'}))
-            sys.exit(1)
-            
-        # Process image and make prediction
-        print("Processing image data...")
-        image_tensor = process_image(image_data)
-        
-        print("Making prediction...")
-        result = predict(image_tensor)
-        
-        # Return prediction with probabilities
-        print(json.dumps({
-            'prediction': result['prediction'],
-            'probabilities': result['probabilities'],
-            'success': True
-        }))
-        
-    except json.JSONDecodeError as je:
-        print(json.dumps({
-            'error': f'Invalid JSON input: {str(je)}',
-            'success': False
-        }))
-        sys.exit(1)
+        # Parse input JSON
+        input_data = json.loads(sys.argv[1])
+        image_data = input_data['image']
+
+        # Process image and load model
+        processed_image = process_image(image_data)
+        model = load_model()
+
+        # Perform prediction
+        model.eval()
+        with torch.no_grad():
+            outputs = model(processed_image)
+            _, predicted = torch.max(outputs, 1)
+
+        # Map prediction to class labels
+        class_labels = ['AD', 'CN', 'MCI']
+        result = {
+            'prediction': class_labels[predicted.item()],
+            'confidence': outputs.softmax(dim=1).tolist()
+        }
+
+        # Output result as JSON
+        print(json.dumps(result))
     except Exception as e:
-        import traceback
-        traceback_str = traceback.format_exc()
-        print(json.dumps({
-            'error': str(e),
-            'traceback': traceback_str,
-            'success': False
-        }))
+        logging.error(f"Error during prediction: {str(e)}")
         sys.exit(1)
+
+if __name__ == "__main__":
+    main()

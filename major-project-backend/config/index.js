@@ -6,11 +6,15 @@ const config = {
     PORT: process.env.PORT || 5000,
     JWT_SECRET: process.env.JWT_SECRET || 'alzheimers-detection-system-secret-2025',
     DB_OPTIONS: {
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 30000, // Increased for Atlas
+        connectTimeoutMS: 30000, // Increased for Atlas
         socketTimeoutMS: 45000,
-        family: 4 
+        maxPoolSize: 10,
+        retryWrites: true,
+        w: 'majority'
     }
 };
 
-module.exports = config;
+module.exports = {
+  config,
+};

@@ -69,7 +69,7 @@ const DoctorDashboard = () => {
         setLoading(true);
         
         // Get API URL from environment
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
         
         const response = await axios.get(`${apiUrl}/api/doctor/dashboard`, {
           headers: {
@@ -99,7 +99,7 @@ const DoctorDashboard = () => {
       try {
         setAppointmentsLoading(true);
         setAppointmentsError("");
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
         const token = localStorage.getItem('token');
         // Fetch all future appointments
         const response = await axios.get(`${apiUrl}/api/doctor/appointments`, {
@@ -162,7 +162,7 @@ const DoctorDashboard = () => {
   // Mark appointment as completed
   const handleCompleteAppointment = async (appointmentId) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const token = localStorage.getItem('token');
       await axios.put(`${apiUrl}/api/doctor/appointments/${appointmentId}/complete`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -176,7 +176,7 @@ const DoctorDashboard = () => {
   // Approve or deny appointment
   const handleAppointmentStatus = async (appointmentId, status) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
       const token = localStorage.getItem('token');
       await axios.put(
         `${apiUrl}/api/doctor/appointments/${appointmentId}/status`,
@@ -284,6 +284,40 @@ const DoctorDashboard = () => {
                       {appt.status === 'approved' && (
                         <button onClick={() => handleAppointmentStatus(appt._id, 'completed')} style={{color: '#4a00e0'}}>Mark as Done</button>
                       )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className="doctor-section">
+          <h3>Assigned Patients</h3>
+          {appointmentsLoading ? (
+            <p>Loading assigned patients...</p>
+          ) : appointmentsError ? (
+            <p style={{ color: 'red' }}>{appointmentsError}</p>
+          ) : !Array.isArray(appointments) || appointments.length === 0 ? (
+            <p>No patients assigned yet.</p>
+          ) : (
+            <table className="patients-table">
+              <thead>
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Classification</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map(appt => (
+                  <tr key={appt._id}>
+                    <td>{appt.patientName || 'Unknown'}</td>
+                    <td>{appt.classification || 'N/A'}</td>
+                    <td>
+                      <button onClick={() => navigate(`/doctor/patient/${appt._id}`)}>
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 ))}

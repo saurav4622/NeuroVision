@@ -1,5 +1,6 @@
 // Custom authentication hook to centralize auth logic
 import { useNavigate } from 'react-router-dom';
+import { endpoints, postApi } from './apiUtils';
 
 export const useAuth = () => {
   const navigate = useNavigate();
@@ -51,12 +52,29 @@ export const useAuth = () => {
     return { token, user };
   };
   
+  const login = async (email, password) => {
+    try {
+      const response = await postApi(endpoints.auth.login, { email, password });
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  };
+
   return {
     setAuthData,
     clearAuthData,
     setRememberMe,
     clearRememberMe,
     redirectBasedOnRole,
-    getAuthData
+    getAuthData,
+    login,
+    logout
   };
 };

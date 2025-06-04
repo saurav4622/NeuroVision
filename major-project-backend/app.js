@@ -11,11 +11,10 @@ const app = express();
 // Basic middleware
 app.use(cors({
   origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://alzheimers-detection-app.vercel.app',
-    'https://neuro-vision.vercel.app', // production frontend
-    /^https:\/\/neuro-vision-.*\.vercel\.app$/ // all Vercel preview deployments
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_URL_DEV,
+    process.env.FRONTEND_URL_PROD,
+    process.env.FRONTEND_URL_PREVIEW // all Vercel preview deployments
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

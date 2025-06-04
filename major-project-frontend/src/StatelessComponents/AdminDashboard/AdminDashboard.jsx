@@ -1,8 +1,8 @@
 import { Switch } from "@mui/material";
-import axios from "axios";
 import { Trash2, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { endpoints, fetchApi, postApi } from '../../utils/apiUtils';
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -32,20 +32,10 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };      // Use new backend endpoints for sorted/processed data
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const doctorsResponse = await axios.get(`${apiUrl}/api/admin/doctors?sort=createdAt`, config);
-      const patientsResponse = await axios.get(`${apiUrl}/api/admin/patients?sort=createdAt`, config);
-      setDoctors(doctorsResponse.data);
-      setPatients(patientsResponse.data);
-      // Optionally, fetch next appointment for admin summary
-      // const nextApptResponse = await axios.get('http://localhost:5000/api/admin/next-appointment', config);
-      // setNextAppointment(nextApptResponse.data);
+      const doctorsResponse = await fetchApi(endpoints.admin.dashboard + '/doctors');
+      const patientsResponse = await fetchApi(endpoints.admin.dashboard + '/patients');
+      setDoctors(doctorsResponse);
+      setPatients(patientsResponse);
     } catch (error) {
       console.error('Error fetching users:', error);
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -62,11 +52,9 @@ const AdminDashboard = () => {
   });
   const handleClassificationToggle = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      await axios.post(`${apiUrl}/api/admin/toggle-classification`, 
-        { enabled: !classificationEnabled },
-        getAuthConfig()
-      );
+      await postApi(endpoints.admin.dashboard + '/toggle-classification', {
+        enabled: !classificationEnabled
+      });
       setClassificationEnabled(!classificationEnabled);
     } catch (error) {
       console.error('Error toggling classification:', error);
@@ -79,7 +67,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (userId, userType) => {
     if (window.confirm(`Are you sure you want to delete this ${userType}?`)) {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
         await axios.delete(
           `${apiUrl}/api/admin/${userType}/${userId}`,
           getAuthConfig()
@@ -95,16 +83,16 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAssignDoctor = async () => {
-    if (!selectedDoctor || !selectedPatient || !appointmentDate) {
-      setAssignStatus("Please select doctor, patient, and date.");
+  const handleAssignDoctor = async (patientId) => {
+    if (!selectedDoctor || !appointmentDate) {
+      setAssignStatus("Please select doctor and date.");
       return;
     }
     try {
       setAssignStatus("Assigning...");
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
       await axios.post(`${apiUrl}/api/admin/assign-doctor`,
-        { doctorId: selectedDoctor, patientId: selectedPatient, appointmentDate },
+        { doctorId: selectedDoctor, patientId, appointmentDate },
         getAuthConfig()
       );
       setAssignStatus("Doctor assigned successfully!");
@@ -234,6 +222,7 @@ const AdminDashboard = () => {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Serial Number</th>
+                        <th>Classification Type</th>
                         <th>Registration Date</th>
                         <th>Actions</th>
                       </tr>
@@ -244,6 +233,7 @@ const AdminDashboard = () => {
                           <td>{patient.name}</td>
                           <td>{patient.email}</td>
                           <td>{patient.patientInfo?.serial || 'N/A'}</td>
+                          <td>{patient.patientInfo?.classificationType || 'N/A'}</td>
                           <td>{new Date(patient.createdAt).toLocaleDateString()}</td>
                           <td>
                             <button 
@@ -265,23 +255,49 @@ const AdminDashboard = () => {
 
         <section className="admin-section appointment-assignment">
           <h3>Assign Doctor to Patient</h3>
-          <div className="assignment-form">
-            <select value={selectedDoctor} onChange={e => setSelectedDoctor(e.target.value)}>
-              <option value="">Select Doctor</option>
-              {Array.isArray(doctors) && doctors.map(doc => (
-                <option key={doc._id} value={doc._id}>{doc.name}</option>
-              ))}
-            </select>
-            <select value={selectedPatient} onChange={e => setSelectedPatient(e.target.value)}>
-              <option value="">Select Patient</option>
-              {Array.isArray(patients) && patients.map(pat => (
-                <option key={pat._id} value={pat._id}>{pat.name}</option>
-              ))}
-            </select>
-            <input type="date" value={appointmentDate} onChange={e => setAppointmentDate(e.target.value)} />
-            <button onClick={handleAssignDoctor}>Assign</button>
-            {assignStatus && <span className="assign-status">{assignStatus}</span>}
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Doctor Name</th>
+                  <th>Appointment Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(patients) && patients.map(patient => (
+                  <tr key={patient._id}>
+                    <td>{patient.name}</td>
+                    <td>
+                      <select
+                        value={selectedDoctor}
+                        onChange={e => setSelectedDoctor(e.target.value)}
+                      >
+                        <option value="">Select Doctor</option>
+                        {Array.isArray(doctors) && doctors.map(doc => (
+                          <option key={doc._id} value={doc._id}>{doc.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        value={appointmentDate}
+                        onChange={e => setAppointmentDate(e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <button onClick={() => handleAssignDoctor(patient._id)}>
+                        Assign
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          {assignStatus && <span className="assign-status">{assignStatus}</span>}
         </section>
       </main>
     </div>

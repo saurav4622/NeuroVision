@@ -1,6 +1,6 @@
 const path = require('path');
 const mongoose = require('mongoose');
-const config = require('./config');
+const { config } = require('./config');
 require('dotenv').config();
 
 // MongoDB Connection Options
@@ -65,7 +65,7 @@ const startServer = async (port) => {
                     }
                 })
                 .once('listening', () => {
-                    console.log(`Server running on http://localhost:${port}`);
+                    console.log(`Server running on ${process.env.FRONTEND_URL}:${port}`);
                     console.log('Available routes:');
                     console.log('- /health (GET)');
                     console.log('- /api/auth/signup (POST)');

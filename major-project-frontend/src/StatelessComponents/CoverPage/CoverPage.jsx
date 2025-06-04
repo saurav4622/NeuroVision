@@ -20,7 +20,7 @@ const CoverPage = () => {
       // Use real admin credentials for bypass
       const email = 'pauisaurav1234@gmail.com';
       const password = 'admin123';
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.BACKEND_URL;
       try {
         const response = await fetch(`${apiUrl}/api/auth/login`, {
           method: 'POST',

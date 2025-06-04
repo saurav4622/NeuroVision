@@ -1,9 +1,10 @@
 // Script to reset an admin user's password in the database
+require('dotenv').config();
 const mongoose = require('mongoose');
 const readline = require('readline');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
-const config = require('./config');
+const { config } = require('./config');
 
 const rl = readline.createInterface({
   input: process.stdin,

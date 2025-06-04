@@ -54,7 +54,7 @@ const UserLogin = () => {
       setError("Please enter your password");
       return;
     }    try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
       console.log('Using API URL:', apiUrl);
       
       const response = await fetch(`${apiUrl}/api/auth/login`, {
