@@ -2,6 +2,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const Appointment = require('../models/Appointment');
+const Report = require('../models/Report');
 
 // Initialize system configuration once MongoDB is connected
 function initializeSystemConfig() {
@@ -43,8 +44,25 @@ exports.getPatients = async (req, res) => {
         const sort = req.query.sort || 'createdAt';
         const patients = await User.find({ role: 'patient' })
             .select('-password')
-            .sort({ [sort]: 1 });
-        res.json(patients);
+            .sort({ [sort]: 1 })
+            .lean();
+        // For each patient, get latest report and attach classificationType
+        const patientIds = patients.map(p => p._id);
+        const latestReports = await Report.aggregate([
+            { $match: { patient: { $in: patientIds } } },
+            { $sort: { createdAt: -1 } },
+            { $group: { _id: '$patient', classification: { $first: '$classification' } } }
+        ]);
+        const reportMap = {};
+        latestReports.forEach(r => { reportMap[r._id.toString()] = r.classification; });
+        const patientsWithClassification = patients.map(p => ({
+            ...p,
+            patientInfo: {
+                ...p.patientInfo,
+                classificationType: reportMap[p._id.toString()] || 'N/A'
+            }
+        }));
+        res.json(patientsWithClassification);
     } catch (error) {
         console.error('Error fetching patients:', error);
         res.status(500).json({ error: 'Failed to fetch patients' });
@@ -173,5 +191,19 @@ exports.getClassificationState = async (req, res) => {
     } catch (error) {
         console.error('Error getting classification state:', error);
         res.status(500).json({ error: 'Failed to get classification state' });
+    }
+};
+
+// Get all admins
+exports.getAdmins = async (req, res) => {
+    try {
+        const sort = req.query.sort || 'createdAt';
+        const admins = await User.find({ role: 'admin' })
+            .select('-password')
+            .sort({ [sort]: 1 });
+        res.json(admins);
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        res.status(500).json({ error: 'Failed to fetch admins' });
     }
 };

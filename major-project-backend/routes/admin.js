@@ -7,7 +7,8 @@ const {
   deleteUser,
   toggleClassification,
   getClassificationState,
-  assignDoctorToPatient
+  assignDoctorToPatient,
+  getAdmins
 } = require('../controllers/adminController');
 
 // Debug middleware
@@ -31,6 +32,9 @@ router.get('/doctors', authenticate, getDoctors);
 // Get all patients
 router.get('/patients', authenticate, getPatients);
 
+// Get all admins
+router.get('/admins', authenticate, getAdmins);
+
 // Delete a user (doctor or patient)
 router.delete('/:userType/:id', authenticate, deleteUser);
 
@@ -42,5 +46,9 @@ router.get('/classification-state', authenticate, getClassificationState);
 
 // Assign doctor to patient
 router.post('/assign-doctor', authenticate, assignDoctorToPatient);
+
+// Add routes to match frontend URLs
+router.get('/dashboard/doctors', authenticate, getDoctors);
+router.get('/dashboard/patients', authenticate, getPatients);
 
 module.exports = router;

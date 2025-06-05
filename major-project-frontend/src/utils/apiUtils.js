@@ -81,8 +81,8 @@ export const endpoints = {
     resetPassword: '/auth/reset-password',
   },
   admin: {
-    dashboard: '/admin/dashboard',
-    createAdmin: '/admin/create',
+    dashboard: '/api/admin', // Updated from '/admin/dashboard' to '/api/admin'
+    createAdmin: '/api/admin/create',
   },
   doctor: {
     dashboard: '/doctor/dashboard',

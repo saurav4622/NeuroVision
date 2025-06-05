@@ -2,7 +2,7 @@ import { Switch } from "@mui/material";
 import { Trash2, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { endpoints, fetchApi, postApi } from '../../utils/apiUtils';
+import { deleteApi, endpoints, fetchApi, postApi } from '../../utils/apiUtils';
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -10,38 +10,47 @@ const AdminDashboard = () => {
   const [classificationEnabled, setClassificationEnabled] = useState(true);
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [selectedTab, setSelectedTab] = useState('doctors'); // 'doctors' or 'patients'
+  const [admins, setAdmins] = useState([]);
+  const [selectedTab, setSelectedTab] = useState('doctors'); // 'doctors', 'patients', or 'admins'
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [selectedPatient, setSelectedPatient] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
   const [assignStatus, setAssignStatus] = useState("");
 
   useEffect(() => {
-    // DEV BYPASS: allow dev-bypass-token for admin
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (
-      !token ||
-      (user.role !== 'admin' && token !== 'dev-bypass-token')
-    ) {
+    if (!token || user.role !== 'admin') {
       navigate('/login');
       return;
     }
     fetchUsers();
+    fetchClassificationState();
   }, [navigate]);
 
   const fetchUsers = async () => {
     try {
       const doctorsResponse = await fetchApi(endpoints.admin.dashboard + '/doctors');
       const patientsResponse = await fetchApi(endpoints.admin.dashboard + '/patients');
+      const adminsResponse = await fetchApi(endpoints.admin.dashboard + '/admins');
       setDoctors(doctorsResponse);
       setPatients(patientsResponse);
+      setAdmins(adminsResponse);
     } catch (error) {
       console.error('Error fetching users:', error);
       if (error.response?.status === 401 || error.response?.status === 403) {
         alert('You are not authorized to access the admin panel');
         navigate('/login');
       }
+    }
+  };
+
+  const fetchClassificationState = async () => {
+    try {
+      const response = await fetchApi(endpoints.admin.dashboard + '/classification-state');
+      setClassificationEnabled(response.classificationEnabled);
+    } catch (error) {
+      console.error('Error fetching classification state:', error);
     }
   };
 
@@ -52,10 +61,10 @@ const AdminDashboard = () => {
   });
   const handleClassificationToggle = async () => {
     try {
-      await postApi(endpoints.admin.dashboard + '/toggle-classification', {
+      const response = await postApi(endpoints.admin.dashboard + '/toggle-classification', {
         enabled: !classificationEnabled
       });
-      setClassificationEnabled(!classificationEnabled);
+      setClassificationEnabled(response.classificationEnabled);
     } catch (error) {
       console.error('Error toggling classification:', error);
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -67,11 +76,7 @@ const AdminDashboard = () => {
   const handleDeleteUser = async (userId, userType) => {
     if (window.confirm(`Are you sure you want to delete this ${userType}?`)) {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
-        await axios.delete(
-          `${apiUrl}/api/admin/${userType}/${userId}`,
-          getAuthConfig()
-        );
+        await deleteApi(`${endpoints.admin.dashboard}/${userType}/${userId}`);
         fetchUsers(); // Refresh the lists
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -176,10 +181,49 @@ const AdminDashboard = () => {
             >
               <Users size={18} /> Patients
             </button>
+            <button 
+              className={`tab-button ${selectedTab === 'admins' ? 'active' : ''}`}
+              onClick={() => setSelectedTab('admins')}
+            >
+              <UserCircle2 size={18} /> Admins
+            </button>
           </div>
 
           <div className="user-list">
-            {selectedTab === 'doctors' ? (
+            {selectedTab === 'admins' ? (
+              <div className="user-table">
+                <h4>Registered Admins</h4>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(admins) && admins.map(admin => (
+                        <tr key={admin._id}>
+                          <td>{admin.name}</td>
+                          <td>{admin.email}</td>
+                          <td>{new Date(admin.createdAt).toLocaleDateString()}</td>
+                          <td>
+                            <button 
+                              className="delete-button"
+                              onClick={() => handleDeleteUser(admin._id, 'admin')}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : selectedTab === 'doctors' ? (
               <div className="user-table">
                 <h4>Registered Doctors</h4>
                 <div className="table-container">
@@ -233,7 +277,7 @@ const AdminDashboard = () => {
                           <td>{patient.name}</td>
                           <td>{patient.email}</td>
                           <td>{patient.patientInfo?.serial || 'N/A'}</td>
-                          <td>{patient.patientInfo?.classificationType || 'N/A'}</td>
+                          <td>{patient.patientInfo?.classificationType || patient.classificationType || 'N/A'}</td>
                           <td>{new Date(patient.createdAt).toLocaleDateString()}</td>
                           <td>
                             <button 
