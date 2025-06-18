@@ -8,16 +8,34 @@ const doctorRoutes = require('./routes/doctor');
 
 const app = express();
 
-// Basic middleware
-// Robust CORS setup to avoid undefined origins
-const allowedOrigins = [process.env.FRONTEND_URL].filter(Boolean);
+// Dynamic CORS setup for dev and prod
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_DEV,
+  process.env.FRONTEND_URL_PROD,
+  process.env.FRONTEND_URL_PREVIEW
+].filter(Boolean);
+
+console.log('Allowed CORS origins:', allowedOrigins);
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
 }));
 app.use(express.json());
+
+// Log loaded env values for debugging
+console.log('Loaded FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('Loaded PORT:', process.env.PORT);
 
 // Routes
 app.use('/api/auth', authRoutes);
