@@ -9,13 +9,10 @@ const doctorRoutes = require('./routes/doctor');
 const app = express();
 
 // Basic middleware
+// Robust CORS setup to avoid undefined origins
+const allowedOrigins = [process.env.FRONTEND_URL].filter(Boolean);
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    process.env.FRONTEND_URL_DEV,
-    process.env.FRONTEND_URL_PROD,
-    process.env.FRONTEND_URL_PREVIEW // all Vercel preview deployments
-  ],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
