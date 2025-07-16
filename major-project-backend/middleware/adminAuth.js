@@ -17,7 +17,12 @@ const adminAuth = async (req, res, next) => {
             token = token.slice(7);
         }
 
-        if (!token) {
+        if (!token || typeof token !== 'string') {
+            console.log('Invalid token type');
+            return res.status(400).json({ 
+                error: 'Invalid token',
+                details: 'Token must be a string'
+            });
             console.log('No token provided');
             return res.status(401).json({ 
                 error: 'Authentication required',
