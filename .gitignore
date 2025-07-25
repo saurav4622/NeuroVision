@@ -1,10 +1,13 @@
-# Dependencies
+# Dependencies - ROOT LEVEL SHOULD NEVER HAVE node_modules
 node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+package.json
+package-lock.json
 
 # Environment variables
 .env

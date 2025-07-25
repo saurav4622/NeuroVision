@@ -4,15 +4,16 @@ A modern web-based application for early detection and monitoring of Alzheimer's
 
 ![NeuroVision](major-project-frontend/src/assets/brain-2.png)
 
-## 🌟 Latest Updates (May 20, 2025)
+## 🚀 Latest Updates (July 25, 2025)
 
-- **Improved Brain MRI Image Detection**: New pre-validation mechanism to check if uploaded images are brain MRI scans, preventing non-MRI uploads.
-- **Robust JSON Parsing**: Enhanced prediction processing to correctly handle Python script output and reduce Failed to Parse errors.
-- **Instant Prediction Results**: Classification results are now displayed immediately without database storage or doctor notification for faster feedback.
-- **Enhanced Admin Login Bypass**: Dev bypass button now uses real admin credentials for proper authentication.
-- **Dashboard API Efficiency**: Moved all heavy sorting and filtering logic for appointments to the backend, improving frontend performance.
-- **Next Appointment Logic**: Backend now calculates the next upcoming appointment, reducing client-side processing.
-- **User-friendly Error Messages**: Better error feedback when prediction fails or uploaded images are invalid.
+**Improved Brain MRI validation**: Reject non-MRI uploads early in the pipeline
+**Robust parsing of AI responses**: Fixes JSON parsing edge cases from Python script
+**Instant feedback**: Display classification results immediately without delaying for DB writes
+**Admin script update**: Uses secure `ADMIN_CREATION_SECRET` (set in `.env`) and prompts for secret
+**Connection fixes**: App now points to `AlzheimersDB` by default, removing old debug utilities
+**Clean logging**: Removed deprecated Mongoose flags and debug scripts from the repo
+**Backend optimizations**: Appointment sorting/filtering moved server-side; next appointment logic refined
+**Enhanced UX**: Clearer error messages across signup, login, and prediction flows
 
 ### Previous Updates
 - **Duplicate Emails Allowed**: Multiple users can now register with the same email address (accounts are uniquely identified by userId).

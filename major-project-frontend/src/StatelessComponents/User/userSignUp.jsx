@@ -171,6 +171,16 @@ const UserSignUp = () => {
         return;
       } else {
         setLoading(false);
+        
+        // Handle specific error types from the backend
+        if (data.errorType === 'DUPLICATE_EMAIL') {
+          alert(`Account Already Exists\n\nAn account with the email "${form.email}" already exists.\n\nPlease:\n• Login with your existing account, or\n• Use a different email address`);
+        } else if (data.errorType === 'VALIDATION_ERROR') {
+          alert(`Validation Error\n\n${data.message}`);
+        } else {
+          alert(`Registration Failed\n\n${data.message || data.error || 'An unexpected error occurred'}`);
+        }
+        
         throw new Error(data.error || 'Failed to register');
       }
     } catch (error) {

@@ -1,2 +1,13 @@
 {
+  "npm.autoDetect": "off",
+  "typescript.suggest.autoImports": false,
+  "javascript.suggest.autoImports": false,
+  "npm.packageManager": "npm",
+  "extensions.autoUpdate": false,
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true
+  }
 }

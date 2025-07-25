@@ -36,8 +36,16 @@ exports.signup = async (req, res) => {
             patientInfoToSave = { ...patientInfo, serial: generatePatientSerial() };
         }
 
-        // Check if the user already exists
-        // (Removed duplicate email check to allow multiple users with same email)
+        // Check if user already exists with this email
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (existingUser) {
+            return res.status(409).json({ 
+                success: false,
+                error: "Email already registered",
+                message: "An account with this email already exists. Please login instead or use a different email.",
+                errorType: "DUPLICATE_EMAIL"
+            });
+        }
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,7 +58,7 @@ exports.signup = async (req, res) => {
         // Create user object with basic info
         const userData = {
             name,
-            email,
+            email: email.toLowerCase(), // Normalize email to lowercase
             password: hashedPassword,
             role,
             emailVerificationOTP: otp,
@@ -75,20 +83,63 @@ exports.signup = async (req, res) => {
         const user = new User(userData);
         await user.save();
 
-        // Send verification email
-        await emailService.sendOTPEmail(email, name, otp);
+        // Send verification email - THIS IS REQUIRED, fail if email service is not working
+        try {
+            await emailService.sendOTPEmail(email, name, otp);
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError.message);
+            
+            // Delete the user that was just created since email verification is required
+            await User.findByIdAndDelete(user._id);
+            
+            // Return error - signup fails if email service is not configured
+            return res.status(500).json({
+                success: false,
+                error: "Email service is not configured properly. User registration requires email verification. Please contact the administrator to configure email settings.",
+                details: emailError.message
+            });
+        }
 
         // Don't send password in response
         const userResponse = user.toObject();
         delete userResponse.password;
 
         res.status(201).json({
+            success: true,
             message: "User created successfully. Please verify your email to continue.",
             user: userResponse,
             userId: user._id // Return userId for OTP verification
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Signup error:', err.message);
+        
+        // Handle MongoDB duplicate key error (email already exists)
+        if (err.code === 11000 && err.keyPattern && err.keyPattern.email) {
+            return res.status(409).json({ 
+                success: false,
+                error: "Email already exists",
+                message: "An account with this email already exists. Please login instead.",
+                errorType: "DUPLICATE_EMAIL"
+            });
+        }
+        
+        // Handle other validation errors
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ 
+                success: false,
+                error: "Validation failed",
+                message: err.message,
+                errorType: "VALIDATION_ERROR"
+            });
+        }
+        
+        // Handle other errors
+        res.status(500).json({ 
+            success: false,
+            error: "Internal server error",
+            message: "Something went wrong. Please try again later.",
+            errorType: "SERVER_ERROR"
+        });
     }
 };
 
@@ -191,9 +242,12 @@ exports.login = async (req, res) => {
         const { email, password, role } = req.body;
         console.log('Login attempt:', { email, role });
         
+        // Normalize email to lowercase for consistent lookup
+        const normalizedEmail = email.toLowerCase();
+        
         // Find user by email and include debugging
-        console.log('Searching for user with email:', email);
-        const foundUser = await User.findOne({ email }).exec();
+        console.log('Searching for user with email:', normalizedEmail);
+        const foundUser = await User.findOne({ email: normalizedEmail }).exec();
         console.log('Found user:', foundUser ? 'Yes' : 'No');
         
         // User not found
