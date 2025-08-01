@@ -1,4 +1,5 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const { 
     signup, 
@@ -9,7 +10,14 @@ const {
     resendOTP 
 } = require('../controllers/authController');
 
-router.post('/signup', signup);
+// Rate limiter for signup route: max 5 requests per hour per IP
+const signupLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5,
+    message: 'Too many signup attempts from this IP, please try again after an hour'
+});
+
+router.post('/signup', signupLimiter, signup);
 router.post('/login', login);
 router.post('/logout', logout);
 router.get('/validate-session', validateSession);
