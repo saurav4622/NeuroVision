@@ -12,22 +12,17 @@ const adminAuth = async (req, res, next) => {
             token = req.query.token;
         }
 
-        // Format token - remove 'Bearer ' if present
-        if (token && token.startsWith('Bearer ')) {
-            token = token.slice(7);
-        }
-
+        // Ensure token is a string before using string methods
         if (!token || typeof token !== 'string') {
             console.log('Invalid token type');
             return res.status(400).json({ 
                 error: 'Invalid token',
                 details: 'Token must be a string'
             });
-            console.log('No token provided');
-            return res.status(401).json({ 
-                error: 'Authentication required',
-                details: 'No authentication token found in request'
-            });
+        }
+        // Format token - remove 'Bearer ' if present
+        if (token.startsWith('Bearer ')) {
+            token = token.slice(7);
         }
 
         // Verify token
