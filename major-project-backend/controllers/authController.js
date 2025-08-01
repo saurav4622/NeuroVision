@@ -209,6 +209,10 @@ exports.resendOTP = async (req, res) => {
     try {
         const { userId } = req.body;
         
+        if (typeof userId !== "string") {
+            return res.status(400).json({ error: 'Invalid userId' });
+        }
+        
         const user = await User.findById(userId);
         if (!user) {
             return res.status(400).json({ error: 'User not found' });
