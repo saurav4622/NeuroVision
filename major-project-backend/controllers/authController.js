@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Session = require('../models/Session');
 const { config } = require('../config');
@@ -146,6 +147,11 @@ exports.signup = async (req, res) => {
 exports.verifyEmail = async (req, res) => {
     try {
         const { userId, otp } = req.body;
+        
+        // Validate userId is a string and a valid ObjectId
+        if (typeof userId !== 'string' || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: 'Invalid userId' });
+        }
         
         const user = await User.findById(userId);
         if (!user) {
