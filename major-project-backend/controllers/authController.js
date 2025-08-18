@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const PendingUser = require('../models/PendingUser');
 const Session = require('../models/Session');
@@ -159,7 +160,7 @@ exports.signup = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
     try {
-    const { userId, otp } = req.body;
+        const { userId, otp } = req.body;
         
         // First try pending users (most likely)
         let pending = await PendingUser.findById(userId);
@@ -248,6 +249,10 @@ exports.verifyEmail = async (req, res) => {
 exports.resendOTP = async (req, res) => {
     try {
         const { userId } = req.body;
+        
+        if (typeof userId !== "string") {
+            return res.status(400).json({ error: 'Invalid userId' });
+        }
         
         let target = await PendingUser.findById(userId);
         let alreadyUser = null;
