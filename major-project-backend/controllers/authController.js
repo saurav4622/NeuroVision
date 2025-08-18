@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const PendingUser = require('../models/PendingUser');
 const Session = require('../models/Session');
 const { config } = require('../config');
 
@@ -14,11 +15,24 @@ function generatePatientSerial() {
 
 const emailService = require('../utils/emailService');
 
+// Utility: mask email for responses
+function maskEmail(email) {
+    if (!email) return '';
+    const [name, domain] = email.split('@');
+    const maskedName = name.length <= 2 ? name[0] + '*' : name[0] + '***' + name.slice(-1);
+    const [d1, d2] = (domain || '').split('.');
+    const maskedDomain = d1 ? d1[0] + '***' + (d1.slice(-1) || '') : '';
+    return `${maskedName}@${maskedDomain}.${d2 || ''}`;
+}
+
 exports.signup = async (req, res) => {
     try {
         const { name, email, password, role = 'patient', patientInfo } = req.body;
 
-        console.log('Signup attempt:', { email, role, name });
+        // Avoid logging sensitive details in production
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Signup attempt:', { email, role, name });
+        }
 
         if (!email || !password || !name) {
             return res.status(400).json({ 
@@ -36,9 +50,9 @@ exports.signup = async (req, res) => {
             patientInfoToSave = { ...patientInfo, serial: generatePatientSerial() };
         }
 
-        // Check if user already exists with this email
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
-        if (existingUser) {
+    // Check if user already exists with this email (in active DB)
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
             return res.status(409).json({ 
                 success: false,
                 error: "Email already registered",
@@ -46,6 +60,8 @@ exports.signup = async (req, res) => {
                 errorType: "DUPLICATE_EMAIL"
             });
         }
+    // Check if a pending signup already exists; if yes, replace with new OTP and details
+    let pending = await PendingUser.findOne({ email: email.toLowerCase() });
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -79,18 +95,19 @@ exports.signup = async (req, res) => {
             userData.patientInfo = patientInfoToSave;
         }
 
-        // Create new user
-        const user = new User(userData);
-        await user.save();
+        // Store as pending until OTP verified
+        if (pending) {
+            await PendingUser.deleteOne({ _id: pending._id });
+        }
+        const pendingUser = await PendingUser.create(userData);
 
         // Send verification email - THIS IS REQUIRED, fail if email service is not working
         try {
             await emailService.sendOTPEmail(email, name, otp);
         } catch (emailError) {
             console.error('Email sending failed:', emailError.message);
-            
-            // Delete the user that was just created since email verification is required
-            await User.findByIdAndDelete(user._id);
+            // Delete the pending user since email couldn't be sent
+            await PendingUser.deleteOne({ _id: pendingUser._id });
             
             // Return error - signup fails if email service is not configured
             return res.status(500).json({
@@ -100,15 +117,12 @@ exports.signup = async (req, res) => {
             });
         }
 
-        // Don't send password in response
-        const userResponse = user.toObject();
-        delete userResponse.password;
-
+        // Return minimal info; do NOT expose OTP or sensitive fields
         res.status(201).json({
             success: true,
             message: "User created successfully. Please verify your email to continue.",
-            user: userResponse,
-            userId: user._id // Return userId for OTP verification
+            userId: pendingUser._id, // for OTP verification
+            emailMasked: maskEmail(email)
         });
     } catch (err) {
         console.error('Signup error:', err.message);
@@ -145,53 +159,79 @@ exports.signup = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
     try {
-        const { userId, otp } = req.body;
+    const { userId, otp } = req.body;
         
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(400).json({ error: 'User not found' });
+        // First try pending users (most likely)
+        let pending = await PendingUser.findById(userId);
+        if (!pending) {
+            // Backward-compatibility: if user was already created in old flow
+            const alreadyUser = await User.findById(userId);
+            if (!alreadyUser) {
+                return res.status(400).json({ error: 'User not found' });
+            }
+            // Continue verifying old flow users
+            var user = alreadyUser; // eslint-disable-line no-var
         }
         
         // Check OTP validity
-        if (user.emailVerificationOTP !== otp) {
+    const target = pending || user;
+    if (target.emailVerificationOTP !== otp) {
             return res.status(400).json({ error: 'Invalid OTP' });
         }
         
         // Check if OTP is expired
-        if (new Date() > new Date(user.otpExpiry)) {
+        if (new Date() > new Date(target.otpExpiry)) {
             return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
         }
         
-        // Mark email as verified
-        user.isEmailVerified = true;
-        user.emailVerificationOTP = null;
-        user.otpExpiry = null;
-        await user.save();
+        let finalUser = null;
+        if (pending) {
+            // Promote pending to real User
+            const doc = pending.toObject();
+            delete doc._id;
+            delete doc.createdAt;
+            // Create user with verified email
+            finalUser = new User({
+                ...doc,
+                isEmailVerified: true,
+                emailVerificationOTP: null,
+                otpExpiry: null
+            });
+            await finalUser.save();
+            await PendingUser.deleteOne({ _id: pending._id });
+        } else {
+            // Old flow - just mark verified
+            user.isEmailVerified = true;
+            user.emailVerificationOTP = null;
+            user.otpExpiry = null;
+            await user.save();
+            finalUser = user;
+        }
         
         // Create token
         const token = jwt.sign(
-            { userId: user._id, role: user.role },
+            { userId: finalUser._id, role: finalUser.role },
             config.JWT_SECRET,
             { expiresIn: '24h' }
         );
         
         // Create session
         const session = new Session({
-            userId: user._id,
+            userId: finalUser._id,
             token,
             deviceInfo: req.headers['user-agent']
         });
         await session.save();
         
         // Don't send password in response
-        const userResponse = user.toObject();
+    const userResponse = finalUser.toObject();
         delete userResponse.password;
         delete userResponse.emailVerificationOTP;
         delete userResponse.otpExpiry;
         
         // Update last active time
-        user.lastActive = new Date();
-        await user.save();
+    finalUser.lastActive = new Date();
+    await finalUser.save();
         
         res.status(200).json({
             message: "Email verified successfully",
@@ -209,13 +249,13 @@ exports.resendOTP = async (req, res) => {
     try {
         const { userId } = req.body;
         
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(400).json({ error: 'User not found' });
-        }
-        
-        if (user.isEmailVerified) {
-            return res.status(400).json({ error: 'Email already verified' });
+        let target = await PendingUser.findById(userId);
+        let alreadyUser = null;
+        if (!target) {
+            alreadyUser = await User.findById(userId);
+            if (!alreadyUser) return res.status(400).json({ error: 'User not found' });
+            if (alreadyUser.isEmailVerified) return res.status(400).json({ error: 'Email already verified' });
+            target = alreadyUser;
         }
         
         // Generate new OTP
@@ -223,12 +263,12 @@ exports.resendOTP = async (req, res) => {
         const otpExpiry = new Date();
         otpExpiry.setMinutes(otpExpiry.getMinutes() + 15);
         
-        user.emailVerificationOTP = otp;
-        user.otpExpiry = otpExpiry;
-        await user.save();
+    target.emailVerificationOTP = otp;
+    target.otpExpiry = otpExpiry;
+    await target.save();
         
         // Send verification email
-        await emailService.sendOTPEmail(user.email, user.name, otp);
+    await emailService.sendOTPEmail(target.email, target.name, otp);
         
         res.status(200).json({ message: 'OTP has been resent to your email' });
         
@@ -240,15 +280,32 @@ exports.resendOTP = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password, role } = req.body;
-        console.log('Login attempt:', { email, role });
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Login attempt:', { email, role });
+        }
         
         // Normalize email to lowercase for consistent lookup
         const normalizedEmail = email.toLowerCase();
         
         // Find user by email and include debugging
-        console.log('Searching for user with email:', normalizedEmail);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Searching for user with email:', normalizedEmail);
+        }
+        const pendingUser = await PendingUser.findOne({ email: normalizedEmail }).exec();
+        if (pendingUser) {
+            // User started signup but hasn't verified yet
+            return res.status(401).json({
+                error: "Email not verified",
+                requiresVerification: true,
+                email: pendingUser.email,
+                userId: pendingUser._id
+            });
+        }
+
         const foundUser = await User.findOne({ email: normalizedEmail }).exec();
-        console.log('Found user:', foundUser ? 'Yes' : 'No');
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Found user:', foundUser ? 'Yes' : 'No');
+        }
         
         // User not found
         if (!foundUser) {

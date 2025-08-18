@@ -8,8 +8,11 @@ const {
   toggleClassification,
   getClassificationState,
   assignDoctorToPatient,
-  getAdmins
+  getAdmins,
+  changePassword
 } = require('../controllers/adminController');
+const { check, validationResult } = require('express-validator');
+const crypto = require('crypto');
 
 // Debug middleware
 router.use((req, res, next) => {
@@ -25,6 +28,15 @@ router.use((req, res, next) => {
 
 // Define authentication middleware for all routes
 const authenticate = adminAuth;
+
+// Decrypt payload function
+const decryptPayload = (encryptedData, key, iv) => {
+  const algorithm = 'aes-256-cbc';
+  const decipher = crypto.createDecipheriv(algorithm, Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
+  let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return JSON.parse(decrypted);
+};
 
 // Get all doctors
 router.get('/doctors', authenticate, getDoctors);
@@ -46,6 +58,26 @@ router.get('/classification-state', authenticate, getClassificationState);
 
 // Assign doctor to patient
 router.post('/assign-doctor', authenticate, assignDoctorToPatient);
+
+// Change admin password
+router.post('/change-password', [
+  check('encryptedData').isString(),
+  check('key').isString(),
+  check('iv').isString()
+], authenticate, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { encryptedData, key, iv } = req.body;
+    req.body = decryptPayload(encryptedData, key, iv);
+    next();
+  } catch (error) {
+    return res.status(400).json({ error: 'Invalid encrypted payload' });
+  }
+}, changePassword);
 
 // Add routes to match frontend URLs
 router.get('/dashboard/doctors', authenticate, getDoctors);

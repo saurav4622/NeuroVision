@@ -2,11 +2,19 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../Login/login.css";
 
+// Suppress console in production to avoid leaking sensitive data
+if (import.meta.env.MODE === 'production') {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
+
 const VerifyOtp = () => {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [resendMsg, setResendMsg] = useState("");
+  const [expired, setExpired] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const userId = location.state?.userId;
@@ -14,9 +22,10 @@ const VerifyOtp = () => {
   const selectedRole = location.state?.role; // role selected during signup
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-    setResendMsg("");
+  setError("");
+  setSuccess("");
+  setResendMsg("");
+  setExpired(false);
     
     // Validate inputs before sending
     if (!otp) {
@@ -30,9 +39,7 @@ const VerifyOtp = () => {
     }
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
-      
-      console.log("Sending OTP verification request:", { userId, otp: otp.substring(0, 2) + "***" });
+  const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
       
       const response = await fetch(`${apiUrl}/api/auth/verify-email`, {
         method: "POST",
@@ -40,10 +47,9 @@ const VerifyOtp = () => {
         body: JSON.stringify({ userId, otp })
       });
       
-      const data = await response.json();
-      console.log("OTP verification response:", { status: response.status, success: response.ok });
+  const data = await response.json();
       
-      if (response.ok) {
+  if (response.ok) {
         setSuccess("Email verified! Redirecting...");
         
         // Store authentication data in localStorage
@@ -60,9 +66,13 @@ const VerifyOtp = () => {
         }, 1500);
       } else {
         // Handle specific error messages
-        const errorMessage = data.error || data.message || data.detail || "Invalid OTP";
-        console.error("OTP verification failed:", errorMessage);
-        setError(errorMessage);
+  const errorMessage = data.error || data.message || data.detail || "Invalid OTP";
+        if (/user not found/i.test(errorMessage) || /expired/i.test(errorMessage)) {
+          setExpired(true);
+          setError("Your verification session has expired or was not found. Please sign up again.");
+        } else {
+          setError(errorMessage);
+        }
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -84,7 +94,13 @@ const VerifyOtp = () => {
       if (response.ok) {
         setResendMsg("OTP resent to your email.");
       } else {
-        setError(data.error || "Failed to resend OTP");
+        const errorMessage = data.error || "Failed to resend OTP";
+        if (/user not found/i.test(errorMessage)) {
+          setExpired(true);
+          setError("Your verification session expired. Please sign up again.");
+        } else {
+          setError(errorMessage);
+        }
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -92,7 +108,18 @@ const VerifyOtp = () => {
   };
 
   if (!userId) {
-    return <div>No user found. Please sign up again.</div>;
+    return (
+      <div className="signup-page">
+        <div className="signup-card">
+          <h2>Verification Needed</h2>
+          <div className="field-error" style={{marginTop: 10}}>No user found. Please sign up again.</div>
+          <div className="button-container" style={{marginTop: 16}}>
+            <button type="button" onClick={() => navigate('/signup')} className="animated-btn">Sign Up</button>
+            <button type="button" onClick={() => navigate('/login')} className="back-to-login">Back to Login</button>
+          </div>
+        </div>
+      </div>
+    );
   }
   return (
     <div className="signup-page">
@@ -103,34 +130,44 @@ const VerifyOtp = () => {
             We've sent a verification code to <strong>{email}</strong>
           </div>
         )}
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={e => setOtp(e.target.value)}
-            required
-            className="animated-input"
-          />
-          <div className="button-container">
-            <button type="submit" className="animated-btn">Verify</button>
-            <button 
-              style={{marginTop: 10}} 
-              onClick={handleResend} 
-              type="button" 
-              className="animated-btn secondary-btn"
-            >
-              Resend OTP
-            </button>
-            <button 
-              type="button"
-              onClick={() => navigate('/login')}
-              className="back-to-login"
-            >
-              Back to Login
-            </button>
+        {expired ? (
+          <div>
+            <div className="field-error" style={{marginBottom: 16}}>{error}</div>
+            <div className="button-container">
+              <button type="button" onClick={() => navigate('/signup')} className="animated-btn">Sign Up Again</button>
+              <button type="button" onClick={() => navigate('/login')} className="back-to-login">Back to Login</button>
+            </div>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={e => setOtp(e.target.value)}
+              required
+              className="animated-input"
+            />
+            <div className="button-container">
+              <button type="submit" className="animated-btn">Verify</button>
+              <button 
+                style={{marginTop: 10}} 
+                onClick={handleResend} 
+                type="button" 
+                className="animated-btn secondary-btn"
+              >
+                Resend OTP
+              </button>
+              <button 
+                type="button"
+                onClick={() => navigate('/login')}
+                className="back-to-login"
+              >
+                Back to Login
+              </button>
+            </div>
+          </form>
+        )}
         {error && <div className="field-error">{error}</div>}
         {success && <div className="success-message">{success}</div>}
         {resendMsg && <div className="success-message">{resendMsg}</div>}

@@ -32,6 +32,10 @@ This directory contains comprehensive documentation for the NeuroVision project.
    - Technical details of feature implementations
    - Benefits of new features
 
+7. **[Security Guide](security-readme.md)**
+   - End-to-end security measures implemented in the project
+   - Rationale, operations tips, and recommended next steps
+
 ## Recent Updates
 
 The documentation includes information about recent system improvements:

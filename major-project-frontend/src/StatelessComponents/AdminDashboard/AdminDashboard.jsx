@@ -1,9 +1,17 @@
-import { Switch } from "@mui/material";
-import { Trash2, UserCircle2, Users } from "lucide-react";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Switch, TextField } from "@mui/material";
+import { Key, Trash2, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteApi, endpoints, fetchApi, postApi } from '../../utils/apiUtils';
+import { encryptPayload } from '../../utils/crypto';
 import "./AdminDashboard.css";
+
+// Disable console logs in production
+if (import.meta.env.MODE === 'production') {
+  console.log = () => {};
+  console.error = () => {};
+  console.warn = () => {};
+}
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +24,11 @@ const AdminDashboard = () => {
   const [selectedPatient, setSelectedPatient] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
   const [assignStatus, setAssignStatus] = useState("");
+  const [passwordChangeDialog, setPasswordChangeDialog] = useState(false);
+  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changePwdStatus, setChangePwdStatus] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -111,6 +124,30 @@ const AdminDashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/logout');
+  };
+  
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword) {
+      setChangePwdStatus('Please fill both fields');
+      return;
+    }
+    try {
+      const encrypted = await encryptPayload({ oldPassword, newPassword });
+      const res = await postApi(endpoints.admin.changePassword, encrypted);
+      setChangePwdStatus(res.message || 'Password changed successfully!');
+      setPasswordChangeDialog(false);
+      setOldPassword('');
+      setNewPassword('');
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to change password';
+      setChangePwdStatus(msg);
+    }
+  };
+
+  const openPasswordDialog = (adminId) => {
+    setSelectedAdminId(adminId);
+    setPasswordChangeDialog(true);
+    setChangePwdStatus('');
   };
 
   return (
@@ -211,6 +248,13 @@ const AdminDashboard = () => {
                           <td>{new Date(admin.createdAt).toLocaleDateString()}</td>
                           <td>
                             <button 
+                              className="change-password-button"
+                              onClick={() => openPasswordDialog(admin._id)}
+                              title="Change Password"
+                            >
+                              <Key size={16} />
+                            </button>
+                            <button 
                               className="delete-button"
                               onClick={() => handleDeleteUser(admin._id, 'admin')}
                             >
@@ -222,6 +266,7 @@ const AdminDashboard = () => {
                     </tbody>
                   </table>
                 </div>
+                {changePwdStatus && <p className="status-message">{changePwdStatus}</p>}
               </div>
             ) : selectedTab === 'doctors' ? (
               <div className="user-table">
@@ -344,6 +389,33 @@ const AdminDashboard = () => {
           {assignStatus && <span className="assign-status">{assignStatus}</span>}
         </section>
       </main>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordChangeDialog} onClose={() => setPasswordChangeDialog(false)}>
+        <DialogTitle>Change Password</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Old Password"
+            type="password"
+            fullWidth
+            margin="dense"
+            value={oldPassword}
+            onChange={e => setOldPassword(e.target.value)}
+          />
+          <TextField
+            label="New Password"
+            type="password"
+            fullWidth
+            margin="dense"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordChangeDialog(false)}>Cancel</Button>
+          <Button onClick={handleChangePassword} variant="contained">Change Password</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

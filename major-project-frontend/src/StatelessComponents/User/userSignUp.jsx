@@ -2,8 +2,16 @@ import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SignupLoader from "../../StatefullComponents/SignupLoader/SignupLoader";
+import { encryptPayload } from "../../utils/crypto";
 import "./login-button.css";
 import "./userSignUp.css";
+
+// Suppress console in production
+if (import.meta.env.MODE === 'production') {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
 
 const UserSignUp = () => {  
   const [showPassword, setShowPassword] = useState(false);
@@ -121,12 +129,9 @@ const UserSignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       const firstError = document.querySelector('.field-error');
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     setLoading(true);
@@ -138,54 +143,28 @@ const UserSignUp = () => {
           dateOfBirth: form.patientInfo.dateOfBirth ? new Date(form.patientInfo.dateOfBirth).toISOString() : undefined
         } : undefined
       };
-
-      if (!formattedForm.patientInfo) delete formattedForm.patientInfo;      
-      console.log('Submitting form:', { ...formattedForm, password: '[REDACTED]' });
-      
+      if (!formattedForm.patientInfo) delete formattedForm.patientInfo;
       const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+      const encrypted = await encryptPayload(formattedForm);
       const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(formattedForm)
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(encrypted)
       });
-
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);      
-      if (response.ok) {        // Show loader for 1s before OTP page
+      if (response.ok) {
         setTimeout(() => {
           setLoading(false);
-          // Pass more complete data to the OTP verification page
-          navigate('/verify-otp', { 
-            state: { 
-              email: form.email, 
-              userId: data.userId, 
-              role: form.role,
-              name: form.name
-            } 
-          });
+          navigate('/verify-otp', { state: { email: form.email, userId: data.userId, role: form.role, name: form.name } });
         }, 1000);
         return;
       } else {
         setLoading(false);
-        
-        // Handle specific error types from the backend
-        if (data.errorType === 'DUPLICATE_EMAIL') {
-          alert(`Account Already Exists\n\nAn account with the email "${form.email}" already exists.\n\nPlease:\n• Login with your existing account, or\n• Use a different email address`);
-        } else if (data.errorType === 'VALIDATION_ERROR') {
-          alert(`Validation Error\n\n${data.message}`);
-        } else {
-          alert(`Registration Failed\n\n${data.message || data.error || 'An unexpected error occurred'}`);
-        }
-        
+        alert(`Registration Failed\n\n${data.message || data.error || 'An unexpected error occurred'}`);
         throw new Error(data.error || 'Failed to register');
       }
     } catch (error) {
       setLoading(false);
-      console.error('Registration error:', error);
       alert(error.message || 'An error occurred during registration');
     }
   };
@@ -236,6 +215,7 @@ const UserSignUp = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={errors.email && touched.email ? 'input-error' : ''}
+                  autoComplete="email"
                   required
                 />
                 {errors.email && touched.email && (
@@ -257,6 +237,7 @@ const UserSignUp = () => {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={errors.password && touched.password ? 'input-error' : ''}
+                    autoComplete="new-password"
                     required
                   />                  <button 
                     type="button"
@@ -285,6 +266,7 @@ const UserSignUp = () => {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={errors.confirmPassword && touched.confirmPassword ? 'input-error' : ''}
+                    autoComplete="new-password"
                     required
                   />                  <button 
                     type="button"

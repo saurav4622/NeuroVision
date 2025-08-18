@@ -4,7 +4,15 @@ import { useNavigate } from "react-router-dom";
 import Ballpit from "../../StatefullComponents/BallPitBg/BallPit.jsx";
 import Button from "../../StatefullComponents/ButtonLogin/LoginButton.jsx";
 import { useAuth } from "../../utils/authHelpers";
+import { encryptPayload } from "../../utils/crypto";
 import "./login.css";
+
+// Suppress console in production
+if (import.meta.env.MODE === 'production') {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
 
 const UserLogin = () => {
   const navigate = useNavigate();
@@ -55,18 +63,15 @@ const UserLogin = () => {
       return;
     }    try {
       const apiUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
-      console.log('Using API URL:', apiUrl);
-      
+      // Prepare encrypted payload
+      const encrypted = await encryptPayload({ email, password, role });
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password, role })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(encrypted)
       });
-      console.log('Login response status:', response.status);
       const data = await response.json();
-      console.log('Login response:', data);if (!response.ok) {
+      if (!response.ok) {
         // Handle different error cases
         if (response.status === 401) {          if (data.error === "Invalid password") {
             const attempts = passwordAttempts + 1;
@@ -161,13 +166,15 @@ const UserLogin = () => {
             )}
           </div>
         )}
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} autoComplete="off">
           <input
             type="email"
             placeholder="Enter Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="animated-input"
+            autoComplete="username"
+            inputMode="email"
           />
           <div className="password-input-container">
             <input
@@ -176,14 +183,17 @@ const UserLogin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="animated-input"
-            />            <button 
+              autoComplete="current-password"
+            />
+            <button 
               type="button"
               className="password-toggle-btn"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} opacity={0.8} /> : <Eye size={18} opacity={0.8} />}
-            </button></div>
+            </button>
+          </div>
           
           <select 
             value={role}

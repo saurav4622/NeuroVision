@@ -8,6 +8,16 @@ const resetAttemptLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// New: Login rate limiter to mitigate brute-force attempts
+const loginLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 10, // allow up to 10 login attempts per 10 minutes per IP
+    message: { error: 'Too many login attempts, please try again later' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 module.exports = {
-    resetAttemptLimiter
+    resetAttemptLimiter,
+    loginLimiter
 };

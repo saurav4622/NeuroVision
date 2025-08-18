@@ -19,14 +19,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.10);
+  /* Blue glass card to match background */
+  background: linear-gradient(180deg, rgba(59,130,246,0.22), rgba(37,99,235,0.18)), rgba(10,16,30,0.35);
   border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(26,41,128,0.18);
+  box-shadow: 0 16px 50px rgba(37,99,235,0.25);
   max-width: 400px;
   width: 100%;
   padding: 36px 28px;
-  border: 1.5px solid rgba(255,255,255,0.18);
-  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(126,167,255,0.45);
+  backdrop-filter: blur(16px);
 }
 
 @media (max-width: 600px) {
@@ -53,27 +54,30 @@
   margin-bottom: 24px;
   text-align: center;
   letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .animated-input {
   width: 100%;
-  padding: 13px 16px;
+  padding: 14px 16px;
   margin-bottom: 18px;
   border-radius: 8px;
-  border: 2px solid rgba(38,208,206,0.4);
-  background: rgba(255,255,255,0.13);
-  color: #fff;
-  font-size: 1rem;
+  /* High-contrast input: light field with dark text */
+  border: 2px solid rgba(126, 167, 255, 0.9); /* soft blue */
+  background: rgba(236, 244, 255, 0.95); /* light blue to match bg */
+  color: #0b1a2b;
+  font-size: 1.05rem;
   outline: none;
   transition: border 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
 }
 .animated-input:focus {
-  border-color: #26d0ce;
-  background: rgba(255,255,255,0.18);
+  border-color: #3b82f6; /* blue focus */
+  background: #f9fbff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.22);
 }
 .animated-input::placeholder {
-  color: #e0f7fa;
+  color: #6b7a8a;
   opacity: 1;
 }
 
@@ -83,39 +87,44 @@
   width: 100%;
   margin-bottom: 18px;
 }
-.password-input-container input {
-  padding-right: 45px;
-}
+.password-input-container input { padding-right: 56px; }
 .password-input-container button {
   background-color: transparent !important;
   box-shadow: none !important;
 }
 .password-toggle-btn {
   position: absolute;
-  right: 8px;
-  top: 50%;
+  right: 8px !important; 
+  top: 40% !important;  
   transform: translateY(-50%);
-  background-color: transparent;
+  background: transparent !important; 
   border: none;
   outline: none;
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.8);
-  padding: 8px;
+  color: #000000 !important; /* force black eye icon */
+  padding: 8px; 
+  margin: 0;
+  line-height: 0;
   z-index: 2;
   transition: all 0.2s ease;
   backdrop-filter: blur(0);
 }
 .password-toggle-btn:hover {
-  color: #ffffff;
-  background-color: transparent;
+  color: #111111;
+  background: none;
 }
 .password-toggle-btn:focus {
   outline: none;
-  background-color: transparent;
+  background: none;
+  box-shadow: none;
 }
+.password-toggle-btn:focus-visible { outline: none; box-shadow: none; }
+.password-toggle-btn svg { display: block; stroke: currentColor !important; color: #000 !important; fill: none; }
 
 /* --- ROLE SELECT --- */
 .role-select {
@@ -123,29 +132,28 @@
   margin-bottom: 14px;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 2px solid rgba(38,208,206,0.4);
-  background: rgba(255,255,255,0.13);
-  color: #fff;
+  border: 2px solid rgba(126, 167, 255, 0.9); /* soft blue */
+  background: rgba(236, 244, 255, 0.95); /* light blue */
+  color: #0b1a2b;
   font-size: 1rem;
   outline: none;
   transition: border 0.2s;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  /* black arrow for visibility */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px;
   cursor: pointer;
 }
-.role-select:focus {
-  border-color: #26d0ce;
-}
+.role-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.22); }
 
-/* Style for dropdown options */
+/* Style for dropdown options - keep high visibility */
 .login-card select option {
-  background-color: #1a2980;
-  color: white;
+  background-color: #edf3ff; /* light blue */
+  color: #0b1a2b;
   padding: 12px;
 }
 

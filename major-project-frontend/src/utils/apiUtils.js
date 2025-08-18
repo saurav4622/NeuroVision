@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Utility functions for making API requests to the backend
 
-const API_URL = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Axios instance with base URL and default headers
 export const apiClient = axios.create({
@@ -81,6 +81,7 @@ export const endpoints = {
   admin: {
     dashboard: '/api/admin',
     createAdmin: '/api/admin/create',
+    changePassword: '/api/admin/change-password',
   },
   doctor: {
     dashboard: '/doctor/dashboard',

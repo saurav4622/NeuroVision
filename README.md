@@ -4,16 +4,13 @@ A modern web-based application for early detection and monitoring of Alzheimer's
 
 ![NeuroVision](major-project-frontend/src/assets/brain-2.png)
 
-## 🚀 Latest Updates (July 25, 2025)
+## 🚀 Latest Updates (August 8, 2025)
 
-**Improved Brain MRI validation**: Reject non-MRI uploads early in the pipeline
-**Robust parsing of AI responses**: Fixes JSON parsing edge cases from Python script
-**Instant feedback**: Display classification results immediately without delaying for DB writes
-**Admin script update**: Uses secure `ADMIN_CREATION_SECRET` (set in `.env`) and prompts for secret
-**Connection fixes**: App now points to `AlzheimersDB` by default, removing old debug utilities
-**Clean logging**: Removed deprecated Mongoose flags and debug scripts from the repo
-**Backend optimizations**: Appointment sorting/filtering moved server-side; next appointment logic refined
-**Enhanced UX**: Clearer error messages across signup, login, and prediction flows
+- Admin: Change Password added (API + UI) with clearer validation and status messages.
+- Admin Dashboard: Classification toggle and state endpoints available (`/api/admin/toggle-classification`, `/api/admin/classification-state`).
+- Admin Data: Dashboard lists available at `/api/admin/doctors`, `/api/admin/patients`, `/api/admin/admins` (and mapped to `/api/admin/dashboard/*` for frontend compatibility).
+- Prediction: More resilient parsing of Python stdout (parse last valid JSON) and improved stderr logging for easier debugging.
+- Frontend Security: Console logs suppressed in production builds to reduce exposure of payloads and URLs; removed accidental client-side logging in admin views.
 
 ### Previous Updates
 - **Duplicate Emails Allowed**: Multiple users can now register with the same email address (accounts are uniquely identified by userId).
@@ -112,15 +109,15 @@ This comprehensive full-stack application implements an AI-powered Alzheimer's d
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/neurovision.git
+git clone https://github.com/[your-username]/neurovision.git
 cd neurovision
 ```
 
 2. Create a `.env` file with required variables:
 ```
-MONGO_USERNAME=neurovision_user
-MONGO_PASSWORD=secure_password
-JWT_SECRET=your_jwt_secret
+MONGO_USERNAME=[your_username]
+MONGO_PASSWORD=[secure_password]
+JWT_SECRET=[your_jwt_secret]
 NODE_ENV=production
 ```
 
@@ -193,7 +190,7 @@ For more details, see [Docker Documentation](documentation/docker-documentation.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/neurovision.git
+git clone https://github.com/[your-username]/neurovision.git
 ```
 
 2. Frontend Setup:
@@ -218,7 +215,7 @@ pip install -r requirements.txt
 Create a `.env` file in the backend directory:
 ```env
 MONGODB_URI=mongodb://localhost:27017/neurovision
-JWT_SECRET=your-secret-key
+JWT_SECRET=[your-secret-key]
 PORT=5000
 ```
 
@@ -298,7 +295,7 @@ For the complete API documentation, see the [detailed API docs](documentation/ap
 
 ```bash
 cd major-project-backend
-node createAdmin.js --email admin@example.com --password securepassword --name "Admin User"
+node createAdmin.js --email [admin@example.com] --password [securepassword] --name "[Admin User]"
 ```
 
 Follow the prompts to create a new admin user.
@@ -307,7 +304,7 @@ Follow the prompts to create a new admin user.
 
 ```bash
 cd major-project-backend
-node resetAdmin.js --email admin@example.com --newPassword newSecurePassword
+node resetAdmin.js --email [admin@example.com] --newPassword [newSecurePassword]
 ```
 
 Follow the prompts to reset an admin's password.
@@ -438,9 +435,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📞 Contact
 
 For any queries regarding this project, please contact:
-- Name: Sourabh Parui
-- Email: paruisourabh4622@gmail.com
-- GitHub: [saurav4622](https://github.com/saurav4622)
+- Repository: [NeuroVision](https://github.com/parui4622/NeuroVision)
+- Owner: parui4622
 
 ---
 

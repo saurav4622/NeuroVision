@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const SystemConfig = require('../models/SystemConfig');
 const Appointment = require('../models/Appointment');
 const Report = require('../models/Report');
+const bcrypt = require('bcryptjs');
 
 // Initialize system configuration once MongoDB is connected
 function initializeSystemConfig() {
@@ -206,4 +207,32 @@ exports.getAdmins = async (req, res) => {
         console.error('Error fetching admins:', error);
         res.status(500).json({ error: 'Failed to fetch admins' });
     }
+};
+
+// Change admin password (simplified without OTP)
+exports.changePassword = async (req, res) => {
+  try {
+    const admin = req.user; // set by adminAuth middleware
+    const { oldPassword, newPassword } = req.body;
+    
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'Old and new passwords are required' });
+    }
+    
+    // verify current password
+    const isMatch = await bcrypt.compare(oldPassword, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Old password is incorrect' });
+    }
+    
+    // hash and update new password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    admin.password = hashed;
+    await admin.save();
+    
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
 };

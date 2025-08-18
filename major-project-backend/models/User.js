@@ -87,8 +87,28 @@ userSchema.virtual('userType').get(function() {
     return this.role;
 });
 
-// Ensure virtual fields are included in JSON and object outputs.
-userSchema.set('toJSON', { virtuals: true });
-userSchema.set('toObject', { virtuals: true });
+// Ensure virtual fields are included and strip sensitive fields globally
+userSchema.set('toJSON', { 
+    virtuals: true,
+    transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.emailVerificationOTP;
+        delete ret.otpExpiry;
+        delete ret.resetToken;
+        delete ret.resetTokenExpiry;
+        return ret;
+    }
+});
+userSchema.set('toObject', { 
+    virtuals: true,
+    transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.emailVerificationOTP;
+        delete ret.otpExpiry;
+        delete ret.resetToken;
+        delete ret.resetTokenExpiry;
+        return ret;
+    }
+});
 
 module.exports = mongoose.model('User', userSchema);
