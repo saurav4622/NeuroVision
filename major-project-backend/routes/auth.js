@@ -13,6 +13,32 @@ const {
     resendOTP 
 } = require('../controllers/authController');
 
+// Helper for AES-256-CBC encrypted payloads from the frontend
+const decryptPayload = (encryptedData, key, iv) => {
+    if (!encryptedData || !key || !iv) return null;
+    const decipher = crypto.createDecipheriv(
+        'aes-256-cbc',
+        Buffer.from(key, 'hex'),
+        Buffer.from(iv, 'hex')
+    );
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return JSON.parse(decrypted);
+};
+
+const decryptMiddleware = (req, res, next) => {
+    const { encryptedData, key, iv } = req.body || {};
+    if (encryptedData && key && iv) {
+        try {
+            req.body = decryptPayload(encryptedData, key, iv);
+        } catch (err) {
+            console.error('Failed to decrypt auth payload:', err.message);
+            return res.status(400).json({ error: 'Invalid encrypted payload' });
+        }
+    }
+    next();
+};
+
 // Rate limiter for signup route: max 5 requests per hour per IP
 const signupLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
@@ -27,8 +53,8 @@ const verifyEmailLimiter = rateLimit({
     message: 'Too many verification attempts from this IP, please try again after an hour'
 });
 
-router.post('/signup', signupLimiter, signup);
-router.post('/login', login);
+router.post('/signup', signupLimiter, decryptMiddleware, signup);
+router.post('/login', decryptMiddleware, login);
 router.post('/logout', logout);
 router.get('/validate-session', validateSession);
 router.post('/verify-email', verifyEmailLimiter, verifyEmail);

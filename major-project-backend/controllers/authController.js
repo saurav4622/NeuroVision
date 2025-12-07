@@ -284,9 +284,13 @@ exports.resendOTP = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { email, password, role } = req.body;
+        const { email, password, role } = req.body || {};
         if (process.env.NODE_ENV !== 'production') {
             console.log('Login attempt:', { email, role });
+        }
+
+        if (!email || typeof email !== 'string' || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
         }
         
         // Normalize email to lowercase for consistent lookup
